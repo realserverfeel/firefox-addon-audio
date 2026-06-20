@@ -913,9 +913,8 @@
   function highlightOverlayMask(idx) {
     // Remove all playing highlights
     document.querySelectorAll('.tts-overlay-mask.playing').forEach(el => el.classList.remove('playing'));
-    // Add to current — but do NOT reduce opacity
-    const group = state.overlayMasks[idx];
-    if (group) group.forEach(el => el.classList.add('playing'));
+    // Add playing to ALL rects for this sentence (by data-idx attribute)
+    document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('playing'));
   }
 
   // ===== OVERLAY HOVER PANE =====
