@@ -764,16 +764,14 @@
         return;
       }
 
-      // Get client rects for this sentence
-      const rects = sentenceRange.getClientRects();
+      // Get client rects for this sentence and merge rects on the same line
+      const rawRects = sentenceRange.getClientRects();
       const scrollX = window.scrollX;
       const scrollY = window.scrollY;
+      const merged = mergeRectsOnSameLine(rawRects);
 
       const overlayGroup = [];
-      for (let i = 0; i < rects.length; i++) {
-        const rect = rects[i];
-        if (rect.width < 2 || rect.height < 2) continue;
-
+      for (const rect of merged) {
         const overlay = document.createElement('div');
         overlay.className = 'tts-overlay-mask' + (idx % 2 === 1 ? ' tts-mask-alt' : '');
         overlay.dataset.idx = idx;
@@ -789,7 +787,6 @@
           e.stopPropagation();
           toggleMask(idx);
         });
-        // Hover pane: show mini toolbar on mouseenter
         overlay.addEventListener('mouseenter', (e) => showOverlayPane(idx, e));
         overlay.addEventListener('mouseleave', hideOverlayPane);
         container.appendChild(overlay);
@@ -797,6 +794,43 @@
       }
 
       state.overlayMasks.push(overlayGroup);
+    });
+  }
+
+  /**
+   * Merge DOMRectList rects that share the same line (similar top) into
+   * single wide rects, eliminating gaps caused by inline element boundaries.
+   */
+  function mergeRectsOnSameLine(rectList) {
+    const rects = [];
+    for (let i = 0; i < rectList.length; i++) {
+      const r = rectList[i];
+      if (r.width < 1 || r.height < 1) continue;
+      rects.push({ top: r.top, left: r.left, right: r.right, bottom: r.bottom });
+    }
+    if (!rects.length) return [];
+
+    // Group by similar top (within 3px tolerance)
+    const lines = [];
+    for (const r of rects) {
+      let found = false;
+      for (const line of lines) {
+        if (Math.abs(r.top - line[0].top) < 3 && Math.abs(r.bottom - line[0].bottom) < 3) {
+          line.push(r);
+          found = true;
+          break;
+        }
+      }
+      if (!found) lines.push([r]);
+    }
+
+    // Merge each line into one rect
+    return lines.map(line => {
+      const top = Math.min(...line.map(r => r.top));
+      const bottom = Math.max(...line.map(r => r.bottom));
+      const left = Math.min(...line.map(r => r.left));
+      const right = Math.max(...line.map(r => r.right));
+      return { top, left, width: right - left, height: bottom - top };
     });
   }
 
@@ -892,14 +926,14 @@
       <button class="tts-overlay-pane-btn" data-pane-action="reveal" title="Reveal text">&#128065;</button>
     `;
 
-    // Position: use the hovered element's rect directly
-    const hoverRect = event.target.getBoundingClientRect();
-    const paneTop = hoverRect.top - 32;
-    const paneLeft = hoverRect.left + hoverRect.width / 2;
+    // Position: at mouse cursor
+    const mouseY = event.clientY;
+    const mouseX = event.clientX;
+    const paneTop = mouseY - 36;
     pane.style.cssText = `
       position: fixed;
-      top: ${paneTop < 4 ? hoverRect.bottom + 4 : paneTop}px;
-      left: ${Math.max(60, Math.min(paneLeft, window.innerWidth - 60))}px;
+      top: ${paneTop < 4 ? mouseY + 8 : paneTop}px;
+      left: ${Math.max(60, Math.min(mouseX, window.innerWidth - 60))}px;
       transform: translateX(-50%);
       z-index: 2147483645;
     `;
