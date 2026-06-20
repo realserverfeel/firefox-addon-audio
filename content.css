@@ -349,27 +349,72 @@
   to { transform: rotate(360deg); }
 }
 
-/* Dictation mode masks on the page */
+/* Dictation mode masks on the page — modern frosted glass effect */
 .tts-page-mask {
   display: inline;
-  background: #333;
+  position: relative;
   color: transparent;
-  border-radius: 2px;
-  padding: 0 2px;
+  background: linear-gradient(135deg, rgba(0, 120, 212, 0.08), rgba(0, 90, 158, 0.12));
+  border-radius: 4px;
+  padding: 1px 3px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration-color: transparent;
+  border-bottom: 2px solid rgba(0, 120, 212, 0.3);
+  backdrop-filter: blur(2px);
 }
 
-.tts-page-mask.blur-mode {
-  background: transparent;
-  color: inherit;
-  filter: blur(6px);
+.tts-page-mask::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, 
+    rgba(100, 100, 100, 0.85) 0%,
+    rgba(80, 80, 80, 0.9) 50%,
+    rgba(100, 100, 100, 0.85) 100%);
+  border-radius: 4px;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tts-page-mask:hover {
+  border-bottom-color: rgba(0, 120, 212, 0.6);
+  transform: scale(1.01);
+}
+
+.tts-page-mask:hover::before {
+  opacity: 0.75;
 }
 
 .tts-page-mask.revealed {
-  background: transparent;
   color: inherit;
-  filter: none;
+  background: rgba(0, 120, 212, 0.05);
+  border-bottom-color: rgba(0, 120, 212, 0.2);
+  transform: none;
+}
+
+.tts-page-mask.revealed::before {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tts-page-mask.playing {
+  color: transparent;
+  background: linear-gradient(135deg, rgba(0, 120, 212, 0.12), rgba(0, 168, 107, 0.12));
+  border-bottom-color: #0078d4;
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.15);
+  animation: tts-pulse-mask 1.5s ease-in-out infinite;
+}
+
+.tts-page-mask.playing.revealed {
+  color: inherit;
+  animation: none;
+  background: rgba(0, 120, 212, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 120, 212, 0.1);
+}
+
+@keyframes tts-pulse-mask {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0, 120, 212, 0.15); }
+  50% { box-shadow: 0 2px 12px rgba(0, 120, 212, 0.3); }
 }
 
 /* Follow-along mode settings */
