@@ -794,14 +794,19 @@
           e.stopPropagation();
           toggleMask(idx);
         });
-        overlay.addEventListener('mouseenter', (e) => showOverlayPane(idx, e));
+        overlay.addEventListener('mouseenter', (e) => {
+          // Highlight ALL rects for this sentence
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
+          showOverlayPane(idx, e);
+        });
         overlay.addEventListener('mouseleave', (e) => {
-          // Don't hide if mouse moves to another rect of same sentence or to the pane
           const related = e.relatedTarget;
           if (related) {
             if (related.closest && related.closest('.tts-overlay-pane')) return;
             if (related.classList && related.classList.contains('tts-overlay-mask') && related.dataset.idx === String(idx)) return;
           }
+          // Remove hover from all rects of this sentence
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.remove('hovered'));
           scheduleHidePane();
         });
         container.appendChild(overlay);
