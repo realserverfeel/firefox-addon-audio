@@ -171,10 +171,13 @@
     });
   }
 
+  let voiceHighlightIdx = -1;
+
   function openVoiceDropdown() {
     const dropdown = document.getElementById('tts-voice-dropdown');
     if (dropdown) {
       dropdown.classList.add('open');
+      voiceHighlightIdx = -1;
       renderVoiceDropdown(document.getElementById('tts-voice-search-input').value);
     }
   }
@@ -182,6 +185,48 @@
   function closeVoiceDropdown() {
     const dropdown = document.getElementById('tts-voice-dropdown');
     if (dropdown) dropdown.classList.remove('open');
+    voiceHighlightIdx = -1;
+  }
+
+  function handleVoiceKeydown(e) {
+    const dropdown = document.getElementById('tts-voice-dropdown');
+    if (!dropdown || !dropdown.classList.contains('open')) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        openVoiceDropdown();
+        e.preventDefault();
+      }
+      return;
+    }
+
+    const options = dropdown.querySelectorAll('.tts-voice-option');
+    if (!options.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      voiceHighlightIdx = Math.min(voiceHighlightIdx + 1, options.length - 1);
+      updateVoiceHighlight(options);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      voiceHighlightIdx = Math.max(voiceHighlightIdx - 1, 0);
+      updateVoiceHighlight(options);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (voiceHighlightIdx >= 0 && voiceHighlightIdx < options.length) {
+        options[voiceHighlightIdx].click();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeVoiceDropdown();
+    }
+  }
+
+  function updateVoiceHighlight(options) {
+    options.forEach((opt, i) => {
+      opt.classList.toggle('highlighted', i === voiceHighlightIdx);
+    });
+    if (voiceHighlightIdx >= 0 && options[voiceHighlightIdx]) {
+      options[voiceHighlightIdx].scrollIntoView({ block: 'nearest' });
+    }
   }
 
   // ===== SIDEBAR =====
@@ -276,9 +321,11 @@
     const voiceInput = document.getElementById('tts-voice-search-input');
     voiceInput.addEventListener('focus', openVoiceDropdown);
     voiceInput.addEventListener('input', (e) => {
+      voiceHighlightIdx = -1;
       openVoiceDropdown();
       renderVoiceDropdown(e.target.value);
     });
+    voiceInput.addEventListener('keydown', handleVoiceKeydown);
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
       const container = document.getElementById('tts-voice-search-container');
@@ -610,7 +657,15 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sentence-${idx + 1}.mp3`;
+    // Filename: tts-YYYYMMDD-HHmmss-NN.mp3
+    const now = new Date();
+    const ts = now.getFullYear().toString()
+      + String(now.getMonth() + 1).padStart(2, '0')
+      + String(now.getDate()).padStart(2, '0')
+      + '-' + String(now.getHours()).padStart(2, '0')
+      + String(now.getMinutes()).padStart(2, '0')
+      + String(now.getSeconds()).padStart(2, '0');
+    a.download = `tts-${ts}-${String(idx + 1).padStart(2, '0')}.mp3`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -730,7 +785,13 @@
           height: ${rect.height}px;
           pointer-events: auto;
         `;
-        overlay.addEventListener('click', () => toggleMask(idx));
+        overlay.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleMask(idx);
+        });
+        // Hover pane: show mini toolbar on mouseenter
+        overlay.addEventListener('mouseenter', (e) => showOverlayPane(idx, e));
+        overlay.addEventListener('mouseleave', hideOverlayPane);
         container.appendChild(overlay);
         overlayGroup.push(overlay);
       }
@@ -802,9 +863,68 @@
   function highlightOverlayMask(idx) {
     // Remove all playing highlights
     document.querySelectorAll('.tts-overlay-mask.playing').forEach(el => el.classList.remove('playing'));
-    // Add to current
+    // Add to current — but do NOT reduce opacity
     const group = state.overlayMasks[idx];
     if (group) group.forEach(el => el.classList.add('playing'));
+  }
+
+  // ===== OVERLAY HOVER PANE =====
+  let overlayPaneEl = null;
+  let overlayPaneTimeout = null;
+
+  function showOverlayPane(idx, event) {
+    hideOverlayPane();
+    const pane = document.createElement('div');
+    pane.className = 'tts-overlay-pane';
+    pane.innerHTML = `
+      <span class="tts-overlay-pane-label">#${idx + 1}</span>
+      <button class="tts-overlay-pane-btn" data-pane-action="focus" title="Focus in sidebar">&#8599; Focus</button>
+      <button class="tts-overlay-pane-btn" data-pane-action="play" title="Play audio">&#9654; Play</button>
+      <button class="tts-overlay-pane-btn" data-pane-action="reveal" title="Reveal text">&#128065; Reveal</button>
+    `;
+
+    // Position above the hovered element
+    const rect = event.target.getBoundingClientRect();
+    pane.style.cssText = `
+      position: fixed;
+      top: ${rect.top - 36}px;
+      left: ${rect.left}px;
+      z-index: 2147483645;
+    `;
+
+    pane.addEventListener('mouseenter', () => {
+      if (overlayPaneTimeout) { clearTimeout(overlayPaneTimeout); overlayPaneTimeout = null; }
+    });
+    pane.addEventListener('mouseleave', hideOverlayPane);
+
+    pane.querySelectorAll('[data-pane-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.paneAction;
+        if (action === 'focus') {
+          // Scroll sidebar to this sentence
+          const card = document.querySelector(`.tts-sentence-card[data-idx="${idx}"]`);
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (action === 'play') {
+          playSentence(idx);
+        } else if (action === 'reveal') {
+          if (!state.dictationRevealed.has(idx)) toggleMask(idx);
+        }
+        hideOverlayPane();
+      });
+    });
+
+    document.body.appendChild(pane);
+    overlayPaneEl = pane;
+  }
+
+  function hideOverlayPane() {
+    overlayPaneTimeout = setTimeout(() => {
+      if (overlayPaneEl && overlayPaneEl.parentNode) {
+        overlayPaneEl.parentNode.removeChild(overlayPaneEl);
+      }
+      overlayPaneEl = null;
+    }, 200);
   }
 
   function removePageMasks() {

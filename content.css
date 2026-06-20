@@ -257,6 +257,19 @@
   font-weight: 500;
 }
 
+.tts-voice-option.highlighted {
+  background: #0078d4;
+  color: white;
+}
+
+.tts-voice-option.highlighted .tts-voice-name {
+  color: white;
+}
+
+.tts-voice-option.highlighted .tts-voice-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .tts-voice-name {
   font-size: 12px;
   color: #333;
@@ -452,20 +465,18 @@
 /* ===== OVERLAY-BASED PAGE MASKS (dictation mode) ===== */
 .tts-overlay-mask {
   border-radius: 3px;
-  background: linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 100%);
-  opacity: 0.92;
+  background: #1a1a1a;
+  opacity: 1;
   cursor: pointer;
-  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.35s ease,
-              box-shadow 0.35s ease,
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s ease,
               transform 0.2s ease;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .tts-overlay-mask:hover {
-  opacity: 0.78;
-  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.25);
-  transform: scale(1.005);
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
+  transform: scale(1.003);
 }
 
 .tts-overlay-mask.revealed {
@@ -474,11 +485,12 @@
   transform: scale(0.98);
 }
 
+/* Playing state: keep fully opaque, just add blue border glow */
 .tts-overlay-mask.playing {
-  background: linear-gradient(135deg, #0056a3 0%, #0078d4 100%);
-  opacity: 0.75;
-  box-shadow: 0 2px 10px rgba(0, 120, 212, 0.35);
-  animation: tts-overlay-pulse 1.8s ease-in-out infinite;
+  background: #1a1a1a;
+  opacity: 1;
+  box-shadow: 0 0 0 2px #0078d4, 0 2px 10px rgba(0, 120, 212, 0.4);
+  animation: tts-overlay-glow 1.8s ease-in-out infinite;
 }
 
 .tts-overlay-mask.playing.revealed {
@@ -487,15 +499,57 @@
   pointer-events: none;
 }
 
-@keyframes tts-overlay-pulse {
+@keyframes tts-overlay-glow {
   0%, 100% {
-    opacity: 0.75;
-    box-shadow: 0 2px 10px rgba(0, 120, 212, 0.35);
+    box-shadow: 0 0 0 2px #0078d4, 0 2px 10px rgba(0, 120, 212, 0.4);
   }
   50% {
-    opacity: 0.6;
-    box-shadow: 0 2px 16px rgba(0, 120, 212, 0.5);
+    box-shadow: 0 0 0 2px #0078d4, 0 2px 16px rgba(0, 120, 212, 0.6);
   }
+}
+
+/* Overlay hover pane (mini toolbar) */
+.tts-overlay-pane {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: tts-pane-in 0.15s ease-out;
+}
+
+@keyframes tts-pane-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tts-overlay-pane-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0078d4;
+  margin-right: 4px;
+}
+
+.tts-overlay-pane-btn {
+  padding: 3px 7px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f8f8f8;
+  cursor: pointer;
+  font-size: 11px;
+  color: #444;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tts-overlay-pane-btn:hover {
+  background: #0078d4;
+  color: white;
+  border-color: #0078d4;
 }
 
 /* Follow-along mode settings */
