@@ -802,11 +802,13 @@
         overlay.addEventListener('mouseenter', (e) => {
           // Highlight ALL rects for this sentence
           document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
-          // Delay pane display by 300ms
+          // Delay pane display by 300ms; capture element and X position now
+          const maskEl = e.target;
+          const clientX = e.clientX;
           if (overlayPaneShowTimeout) clearTimeout(overlayPaneShowTimeout);
           overlayPaneShowTimeout = setTimeout(() => {
             overlayPaneShowTimeout = null;
-            showOverlayPane(idx, e);
+            showOverlayPane(idx, maskEl, clientX);
           }, 300);
         });
         overlay.addEventListener('mouseleave', (e) => {
@@ -946,8 +948,8 @@
   let overlayPaneIdx = -1;
   let overlayPaneShowTimeout = null;
 
-  function showOverlayPane(idx, event) {
-    // If pane already showing for same sentence, just cancel any pending hide
+  function showOverlayPane(idx, maskEl, clientX) {
+    // If pane already exists for same sentence, just cancel any pending hide
     if (overlayPaneEl && overlayPaneIdx === idx) {
       if (overlayPaneTimeout) { clearTimeout(overlayPaneTimeout); overlayPaneTimeout = null; }
       return;
@@ -966,9 +968,9 @@
     `;
 
     // Position: X follows mouse cursor, Y anchored above the mask rect
-    const maskRect = event.target.getBoundingClientRect();
+    const maskRect = maskEl.getBoundingClientRect();
     const paneTop = maskRect.top - 32;
-    const paneLeft = event.clientX;
+    const paneLeft = clientX;
     pane.style.cssText = `
       position: fixed;
       top: ${paneTop < 4 ? maskRect.bottom + 4 : paneTop}px;
