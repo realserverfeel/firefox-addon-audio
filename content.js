@@ -599,7 +599,12 @@
       } else {
         currentAudio.pause();
       }
-      renderSentences();
+      // Update only the play button icon without re-rendering the whole list
+      const idx = state.currentPlaying;
+      const btn = document.querySelector(`[data-action="play"][data-idx="${idx}"]`);
+      if (btn) {
+        btn.innerHTML = currentAudio.paused ? '&#9654;' : '&#10074;&#10074;';
+      }
     }
   }
 
