@@ -825,18 +825,20 @@
     const rects = [];
     for (let i = 0; i < rectList.length; i++) {
       const r = rectList[i];
-      // Skip tiny rects (superscript numbers, footnote markers, small inline elements)
-      if (r.width < 8 || r.height < 14) continue;
+      if (r.width < 1 || r.height < 1) continue;
       rects.push({ top: r.top, left: r.left, right: r.right, bottom: r.bottom });
     }
     if (!rects.length) return [];
 
-    // Group by similar top (within 3px tolerance)
+    // Group rects that overlap vertically (their Y ranges intersect)
     const lines = [];
     for (const r of rects) {
       let found = false;
       for (const line of lines) {
-        if (Math.abs(r.top - line[0].top) < 3 && Math.abs(r.bottom - line[0].bottom) < 3) {
+        const lineTop = Math.min(...line.map(l => l.top));
+        const lineBottom = Math.max(...line.map(l => l.bottom));
+        // Check vertical overlap
+        if (r.top < lineBottom && r.bottom > lineTop) {
           line.push(r);
           found = true;
           break;
@@ -846,13 +848,17 @@
     }
 
     // Merge each line into one rect
-    return lines.map(line => {
+    const merged = lines.map(line => {
       const top = Math.min(...line.map(r => r.top));
       const bottom = Math.max(...line.map(r => r.bottom));
       const left = Math.min(...line.map(r => r.left));
       const right = Math.max(...line.map(r => r.right));
       return { top, left, width: right - left, height: bottom - top };
     });
+
+    // Filter out tiny fragments (width < 20% of widest line)
+    const maxWidth = Math.max(...merged.map(r => r.width));
+    return merged.filter(r => r.width >= maxWidth * 0.15);
   }
 
   function getTextNodesInRange(range) {
