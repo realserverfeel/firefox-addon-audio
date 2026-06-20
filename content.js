@@ -871,46 +871,67 @@
   // ===== OVERLAY HOVER PANE =====
   let overlayPaneEl = null;
   let overlayPaneTimeout = null;
+  let overlayPaneIdx = -1;
 
   function showOverlayPane(idx, event) {
-    hideOverlayPane();
+    // If pane already showing for same sentence, just cancel any pending hide
+    if (overlayPaneEl && overlayPaneIdx === idx) {
+      if (overlayPaneTimeout) { clearTimeout(overlayPaneTimeout); overlayPaneTimeout = null; }
+      return;
+    }
+    // Immediately remove any existing pane
+    forceRemovePane();
+
+    overlayPaneIdx = idx;
     const pane = document.createElement('div');
     pane.className = 'tts-overlay-pane';
     pane.innerHTML = `
       <span class="tts-overlay-pane-label">#${idx + 1}</span>
-      <button class="tts-overlay-pane-btn" data-pane-action="focus" title="Focus in sidebar">&#8599; Focus</button>
-      <button class="tts-overlay-pane-btn" data-pane-action="play" title="Play audio">&#9654; Play</button>
-      <button class="tts-overlay-pane-btn" data-pane-action="reveal" title="Reveal text">&#128065; Reveal</button>
+      <button class="tts-overlay-pane-btn" data-pane-action="focus" title="Focus in sidebar">&#8599;</button>
+      <button class="tts-overlay-pane-btn" data-pane-action="play" title="Play audio">&#9654;</button>
+      <button class="tts-overlay-pane-btn" data-pane-action="reveal" title="Reveal text">&#128065;</button>
     `;
 
-    // Position above the hovered element
-    const rect = event.target.getBoundingClientRect();
+    // Position: find the first (topmost) rect for this sentence group
+    const group = state.overlayMasks[idx];
+    let anchorRect;
+    if (group && group.length) {
+      anchorRect = group[0].getBoundingClientRect();
+    } else {
+      anchorRect = event.target.getBoundingClientRect();
+    }
+
+    // Place above the first line, centered
+    const paneTop = anchorRect.top - 32;
+    const paneLeft = anchorRect.left + anchorRect.width / 2;
     pane.style.cssText = `
       position: fixed;
-      top: ${rect.top - 36}px;
-      left: ${rect.left}px;
+      top: ${paneTop < 4 ? anchorRect.bottom + 4 : paneTop}px;
+      left: ${paneLeft}px;
+      transform: translateX(-50%);
       z-index: 2147483645;
     `;
 
     pane.addEventListener('mouseenter', () => {
       if (overlayPaneTimeout) { clearTimeout(overlayPaneTimeout); overlayPaneTimeout = null; }
     });
-    pane.addEventListener('mouseleave', hideOverlayPane);
+    pane.addEventListener('mouseleave', () => scheduleHidePane());
 
     pane.querySelectorAll('[data-pane-action]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const action = btn.dataset.paneAction;
         if (action === 'focus') {
-          // Scroll sidebar to this sentence
           const card = document.querySelector(`.tts-sentence-card[data-idx="${idx}"]`);
           if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else if (action === 'play') {
           playSentence(idx);
+          const card = document.querySelector(`.tts-sentence-card[data-idx="${idx}"]`);
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else if (action === 'reveal') {
-          if (!state.dictationRevealed.has(idx)) toggleMask(idx);
+          toggleMask(idx);
         }
-        hideOverlayPane();
+        forceRemovePane();
       });
     });
 
@@ -918,16 +939,26 @@
     overlayPaneEl = pane;
   }
 
+  function scheduleHidePane() {
+    if (overlayPaneTimeout) clearTimeout(overlayPaneTimeout);
+    overlayPaneTimeout = setTimeout(() => forceRemovePane(), 250);
+  }
+
   function hideOverlayPane() {
-    overlayPaneTimeout = setTimeout(() => {
-      if (overlayPaneEl && overlayPaneEl.parentNode) {
-        overlayPaneEl.parentNode.removeChild(overlayPaneEl);
-      }
-      overlayPaneEl = null;
-    }, 200);
+    scheduleHidePane();
+  }
+
+  function forceRemovePane() {
+    if (overlayPaneTimeout) { clearTimeout(overlayPaneTimeout); overlayPaneTimeout = null; }
+    if (overlayPaneEl && overlayPaneEl.parentNode) {
+      overlayPaneEl.parentNode.removeChild(overlayPaneEl);
+    }
+    overlayPaneEl = null;
+    overlayPaneIdx = -1;
   }
 
   function removePageMasks() {
+    forceRemovePane();
     const container = document.getElementById('tts-overlay-container');
     if (container) container.innerHTML = '';
     state.overlayMasks = [];
