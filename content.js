@@ -820,8 +820,8 @@
     const rects = [];
     for (let i = 0; i < rectList.length; i++) {
       const r = rectList[i];
-      // Skip tiny rects (superscript numbers, footnote markers etc.)
-      if (r.width < 2 || r.height < 12) continue;
+      // Skip tiny rects (superscript numbers, footnote markers, small inline elements)
+      if (r.width < 8 || r.height < 14) continue;
       rects.push({ top: r.top, left: r.left, right: r.right, bottom: r.bottom });
     }
     if (!rects.length) return [];
@@ -972,7 +972,6 @@
         } else if (action === 'reveal') {
           toggleMask(idx);
         }
-        forceRemovePane();
       });
     });
 
