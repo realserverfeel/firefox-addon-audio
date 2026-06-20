@@ -775,7 +775,7 @@
         if (rect.width < 2 || rect.height < 2) continue;
 
         const overlay = document.createElement('div');
-        overlay.className = 'tts-overlay-mask';
+        overlay.className = 'tts-overlay-mask' + (idx % 2 === 1 ? ' tts-mask-alt' : '');
         overlay.dataset.idx = idx;
         overlay.style.cssText = `
           position: absolute;
@@ -892,22 +892,14 @@
       <button class="tts-overlay-pane-btn" data-pane-action="reveal" title="Reveal text">&#128065;</button>
     `;
 
-    // Position: find the first (topmost) rect for this sentence group
-    const group = state.overlayMasks[idx];
-    let anchorRect;
-    if (group && group.length) {
-      anchorRect = group[0].getBoundingClientRect();
-    } else {
-      anchorRect = event.target.getBoundingClientRect();
-    }
-
-    // Place above the first line, centered
-    const paneTop = anchorRect.top - 32;
-    const paneLeft = anchorRect.left + anchorRect.width / 2;
+    // Position: use the hovered element's rect directly
+    const hoverRect = event.target.getBoundingClientRect();
+    const paneTop = hoverRect.top - 32;
+    const paneLeft = hoverRect.left + hoverRect.width / 2;
     pane.style.cssText = `
       position: fixed;
-      top: ${paneTop < 4 ? anchorRect.bottom + 4 : paneTop}px;
-      left: ${paneLeft}px;
+      top: ${paneTop < 4 ? hoverRect.bottom + 4 : paneTop}px;
+      left: ${Math.max(60, Math.min(paneLeft, window.innerWidth - 60))}px;
       transform: translateX(-50%);
       z-index: 2147483645;
     `;
