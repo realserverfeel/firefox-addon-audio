@@ -58,9 +58,17 @@ const SentenceSplitter = (() => {
           }
         }
 
-        // Check if followed by whitespace and then uppercase or end of text
+        // Check if followed by whitespace (or footnote markers then whitespace) and then uppercase or end of text
         const remaining = chars.slice(i + 1);
-        if (!remaining || /^\s/.test(remaining)) {
+        // Detect footnote markers like [45], [45][46], etc.
+        const footnoteMatch = remaining.match(/^(\[\d+\])+/);
+        const afterFootnotes = footnoteMatch ? remaining.slice(footnoteMatch[0].length) : remaining;
+        if (!remaining || /^\s/.test(remaining) || (footnoteMatch && (!afterFootnotes || /^\s/.test(afterFootnotes)))) {
+          // Include footnote markers in current sentence if present
+          if (footnoteMatch) {
+            current += footnoteMatch[0];
+            i += footnoteMatch[0].length;
+          }
           const trimmed = current.trim();
           if (trimmed) {
             sentences.push(trimmed);

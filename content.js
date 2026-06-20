@@ -634,10 +634,16 @@
     }
   }
 
+  // Strip footnote markers [N] from text for TTS (don't read them aloud)
+  function stripFootnotes(text) {
+    return text.replace(/\[\d+\]/g, '').replace(/\s{2,}/g, ' ').trim();
+  }
+
   // ===== SYNTHESIS =====
   function startSynthesis() {
+    const cleanedSentences = state.sentences.map(s => stripFootnotes(s));
     AzureTTS.batchSynthesize(
-      state.sentences,
+      cleanedSentences,
       state.settings,
       (idx, blob, error) => {
         if (blob) {
@@ -653,7 +659,7 @@
   function retrySentence(idx) {
     state.audioBlobs[idx] = null;
     renderSentences();
-    AzureTTS.synthesize(state.sentences[idx], state.settings)
+    AzureTTS.synthesize(stripFootnotes(state.sentences[idx]), state.settings)
       .then(blob => { state.audioBlobs[idx] = blob; renderSentences(); })
       .catch(err => { state.audioBlobs[idx] = { error: err.message }; renderSentences(); });
   }
