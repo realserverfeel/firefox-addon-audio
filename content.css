@@ -127,14 +127,15 @@
 .tts-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 10px 16px;
   border-bottom: 1px solid #e0e0e0;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .tts-btn {
-  padding: 6px 12px;
+  padding: 6px 10px;
   border: 1px solid #d0d0d0;
   border-radius: 4px;
   background: white;
@@ -180,17 +181,98 @@
   font-size: 12px;
   font-weight: 500;
   color: #555;
-  min-width: 50px;
+  min-width: 44px;
 }
 
 .tts-setting-row select,
 .tts-setting-row input {
   flex: 1;
-  padding: 4px 8px;
+  padding: 5px 8px;
   border: 1px solid #d0d0d0;
   border-radius: 4px;
   font-size: 12px;
   background: white;
+}
+
+/* Voice Search Dropdown */
+.tts-voice-search-container {
+  flex: 1;
+  position: relative;
+}
+
+#tts-voice-search-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+#tts-voice-search-input:focus {
+  outline: none;
+  border-color: #0078d4;
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.15);
+}
+
+.tts-voice-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d0d0d0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 2147483645;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.tts-voice-dropdown.open {
+  display: block;
+}
+
+.tts-voice-dropdown-list {
+  padding: 4px 0;
+}
+
+.tts-voice-option {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tts-voice-option:hover {
+  background: #f0f7ff;
+}
+
+.tts-voice-option.selected {
+  background: #e8f4fd;
+  font-weight: 500;
+}
+
+.tts-voice-name {
+  font-size: 12px;
+  color: #333;
+}
+
+.tts-voice-meta {
+  font-size: 10px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.tts-voice-empty {
+  padding: 12px;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
 }
 
 /* Speed buttons */
@@ -221,7 +303,7 @@
   padding: 8px 0;
 }
 
-/* Sentence Card */
+/* Sentence Card — full text display */
 .tts-sentence-card {
   padding: 10px 16px;
   border-bottom: 1px solid #f0f0f0;
@@ -240,32 +322,43 @@
 .tts-sentence-num {
   font-size: 11px;
   color: #999;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .tts-sentence-text {
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
   margin-bottom: 8px;
   color: #333;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .tts-sentence-text.masked {
-  filter: blur(6px);
+  filter: blur(5px);
   user-select: none;
   cursor: pointer;
   transition: filter 0.3s ease;
 }
 
 .tts-sentence-text.masked:hover {
-  filter: blur(4px);
+  filter: blur(3px);
 }
 
-.tts-sentence-text.revealed {
-  filter: none;
-}
-
+/* Sentence actions — stacked layout */
 .tts-sentence-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tts-playback-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tts-tools-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -279,10 +372,11 @@
   cursor: pointer;
   font-size: 11px;
   color: #555;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 3px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .tts-action-btn:hover {
@@ -302,20 +396,26 @@
   cursor: not-allowed;
 }
 
-/* Progress bar */
+/* Progress bar — clickable/seekable */
 .tts-progress-container {
   flex: 1;
-  height: 4px;
+  height: 6px;
   background: #e0e0e0;
-  border-radius: 2px;
-  margin: 0 6px;
+  border-radius: 3px;
   cursor: pointer;
+  position: relative;
+}
+
+.tts-progress-container:hover {
+  height: 8px;
+  margin-top: -1px;
+  margin-bottom: -1px;
 }
 
 .tts-progress-bar {
   height: 100%;
-  background: #0078d4;
-  border-radius: 2px;
+  background: linear-gradient(90deg, #0078d4, #00a5e0);
+  border-radius: 3px;
   width: 0%;
   transition: width 0.1s linear;
 }
@@ -349,72 +449,53 @@
   to { transform: rotate(360deg); }
 }
 
-/* Dictation mode masks on the page — modern frosted glass effect */
-.tts-page-mask {
-  display: inline;
-  position: relative;
-  color: transparent;
-  background: linear-gradient(135deg, rgba(0, 120, 212, 0.08), rgba(0, 90, 158, 0.12));
-  border-radius: 4px;
-  padding: 1px 3px;
+/* ===== OVERLAY-BASED PAGE MASKS (dictation mode) ===== */
+.tts-overlay-mask {
+  border-radius: 3px;
+  background: linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 100%);
+  opacity: 0.92;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  text-decoration-color: transparent;
-  border-bottom: 2px solid rgba(0, 120, 212, 0.3);
-  backdrop-filter: blur(2px);
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.35s ease,
+              box-shadow 0.35s ease,
+              transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
-.tts-page-mask::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, 
-    rgba(100, 100, 100, 0.85) 0%,
-    rgba(80, 80, 80, 0.9) 50%,
-    rgba(100, 100, 100, 0.85) 100%);
-  border-radius: 4px;
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+.tts-overlay-mask:hover {
+  opacity: 0.78;
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.25);
+  transform: scale(1.005);
 }
 
-.tts-page-mask:hover {
-  border-bottom-color: rgba(0, 120, 212, 0.6);
-  transform: scale(1.01);
-}
-
-.tts-page-mask:hover::before {
-  opacity: 0.75;
-}
-
-.tts-page-mask.revealed {
-  color: inherit;
-  background: rgba(0, 120, 212, 0.05);
-  border-bottom-color: rgba(0, 120, 212, 0.2);
-  transform: none;
-}
-
-.tts-page-mask.revealed::before {
+.tts-overlay-mask.revealed {
   opacity: 0;
+  pointer-events: none;
+  transform: scale(0.98);
+}
+
+.tts-overlay-mask.playing {
+  background: linear-gradient(135deg, #0056a3 0%, #0078d4 100%);
+  opacity: 0.75;
+  box-shadow: 0 2px 10px rgba(0, 120, 212, 0.35);
+  animation: tts-overlay-pulse 1.8s ease-in-out infinite;
+}
+
+.tts-overlay-mask.playing.revealed {
+  opacity: 0;
+  animation: none;
   pointer-events: none;
 }
 
-.tts-page-mask.playing {
-  color: transparent;
-  background: linear-gradient(135deg, rgba(0, 120, 212, 0.12), rgba(0, 168, 107, 0.12));
-  border-bottom-color: #0078d4;
-  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.15);
-  animation: tts-pulse-mask 1.5s ease-in-out infinite;
-}
-
-.tts-page-mask.playing.revealed {
-  color: inherit;
-  animation: none;
-  background: rgba(0, 120, 212, 0.08);
-  box-shadow: 0 1px 4px rgba(0, 120, 212, 0.1);
-}
-
-@keyframes tts-pulse-mask {
-  0%, 100% { box-shadow: 0 2px 8px rgba(0, 120, 212, 0.15); }
-  50% { box-shadow: 0 2px 12px rgba(0, 120, 212, 0.3); }
+@keyframes tts-overlay-pulse {
+  0%, 100% {
+    opacity: 0.75;
+    box-shadow: 0 2px 10px rgba(0, 120, 212, 0.35);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 2px 16px rgba(0, 120, 212, 0.5);
+  }
 }
 
 /* Follow-along mode settings */
@@ -437,12 +518,11 @@
 
 /* Dictation mode controls */
 .tts-dictation-controls {
-  display: flex;
+  display: none;
   gap: 6px;
   padding: 8px 16px;
   border-bottom: 1px solid #e0e0e0;
   flex-shrink: 0;
-  display: none;
 }
 
 .tts-dictation-controls.visible {
@@ -451,18 +531,18 @@
 
 /* Copied tooltip */
 .tts-copied-tooltip {
-  position: absolute;
   background: #333;
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
   pointer-events: none;
-  animation: tts-fadeout 1s ease forwards;
+  animation: tts-fadeout 1.2s ease forwards;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 @keyframes tts-fadeout {
-  0% { opacity: 1; }
-  70% { opacity: 1; }
-  100% { opacity: 0; }
+  0% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
 }

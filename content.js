@@ -7,9 +7,9 @@
 
   // State
   let state = {
-    mode: 'read', // 'read' or 'dictation'
+    mode: 'read',
     sentences: [],
-    audioBlobs: [],   // Blob | null | {error: string}
+    audioBlobs: [],
     currentPlaying: -1,
     isPlayingAll: false,
     sidebarOpen: false,
@@ -22,9 +22,9 @@
     },
     followAlongPause: 3,
     dictationRevealed: new Set(),
-    pageMasks: [],       // Array of DOM elements wrapping sentences on the page
-    selectionRange: null, // Stored Range from user selection
-    voices: [],          // Dynamically loaded voice list
+    overlayMasks: [],     // Array of overlay divs positioned over sentences
+    selectionRange: null,
+    voices: [],
     voicesLoaded: false
   };
 
@@ -54,7 +54,6 @@
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
     if (selectedText) {
-      // Store the selection range for page masking
       if (selection.rangeCount > 0) {
         state.selectionRange = selection.getRangeAt(0).cloneRange();
       }
@@ -72,20 +71,14 @@
       const selectedText = window.getSelection().toString().trim();
       const fab = document.getElementById('azure-tts-fab');
       if (fab) {
-        if (selectedText) {
-          fab.classList.add('active');
-        } else {
-          fab.classList.remove('active');
-        }
+        fab.classList.toggle('active', !!selectedText);
       }
     });
   }
 
   // ===== TEXT PROCESSING =====
   function processText(text) {
-    // Clean up previous page masks
     removePageMasks();
-
     state.sentences = SentenceSplitter.split(text);
     state.audioBlobs = new Array(state.sentences.length).fill(null);
     state.currentPlaying = -1;
@@ -104,50 +97,91 @@
       .then(voices => {
         state.voices = voices;
         state.voicesLoaded = true;
-        populateVoiceSelect();
+        populateVoiceSearch();
       })
       .catch(() => {
-        // Silently fail — use fallback hardcoded list
         state.voicesLoaded = false;
       });
   }
 
-  function populateVoiceSelect() {
-    const select = document.getElementById('tts-voice-select');
-    if (!select || !state.voices.length) return;
+  function populateVoiceSearch() {
+    const container = document.getElementById('tts-voice-search-container');
+    if (!container || !state.voices.length) return;
+    // Voice search is already initialized, just update data
+    renderVoiceDropdown('');
+  }
 
-    // Group voices by locale
-    const grouped = {};
-    state.voices.forEach(v => {
-      const locale = v.Locale || v.locale || '';
-      if (!grouped[locale]) grouped[locale] = [];
-      grouped[locale].push(v);
+  function renderVoiceDropdown(filter) {
+    const list = document.getElementById('tts-voice-dropdown-list');
+    if (!list) return;
+
+    const filterLower = filter.toLowerCase();
+    let voices = state.voices;
+
+    if (filterLower) {
+      voices = voices.filter(v => {
+        const name = (v.DisplayName || v.LocalName || v.ShortName || '').toLowerCase();
+        const locale = (v.Locale || '').toLowerCase();
+        const gender = (v.Gender || '').toLowerCase();
+        return name.includes(filterLower) || locale.includes(filterLower) || gender.includes(filterLower);
+      });
+    } else {
+      // Show only English voices by default to reduce clutter
+      voices = voices.filter(v => (v.Locale || '').startsWith('en-'));
+    }
+
+    // Sort: current selection first, then alphabetical
+    voices.sort((a, b) => {
+      const aName = a.ShortName || '';
+      const bName = b.ShortName || '';
+      if (aName === state.settings.voice) return -1;
+      if (bName === state.settings.voice) return 1;
+      return (a.DisplayName || aName).localeCompare(b.DisplayName || bName);
     });
 
-    // Sort locales — put English first
-    const locales = Object.keys(grouped).sort((a, b) => {
-      if (a.startsWith('en-') && !b.startsWith('en-')) return -1;
-      if (!a.startsWith('en-') && b.startsWith('en-')) return 1;
-      return a.localeCompare(b);
-    });
+    // Limit to 50 for performance
+    const shown = voices.slice(0, 50);
 
-    select.innerHTML = '';
-    locales.forEach(locale => {
-      const group = document.createElement('optgroup');
-      group.label = locale;
-      grouped[locale]
-        .sort((a, b) => (a.DisplayName || a.ShortName).localeCompare(b.DisplayName || b.ShortName))
-        .forEach(voice => {
-          const opt = document.createElement('option');
-          opt.value = voice.ShortName || voice.shortName || '';
-          const displayName = voice.DisplayName || voice.LocalName || voice.ShortName || '';
-          const gender = voice.Gender || '';
-          opt.textContent = `${displayName} (${gender})`;
-          if (opt.value === state.settings.voice) opt.selected = true;
-          group.appendChild(opt);
-        });
-      select.appendChild(group);
+    list.innerHTML = shown.map(v => {
+      const name = v.DisplayName || v.LocalName || v.ShortName || '';
+      const gender = v.Gender || '';
+      const locale = v.Locale || '';
+      const shortName = v.ShortName || '';
+      const isSelected = shortName === state.settings.voice;
+      return `<div class="tts-voice-option${isSelected ? ' selected' : ''}" data-voice="${escapeHtml(shortName)}">
+        <span class="tts-voice-name">${escapeHtml(name)}</span>
+        <span class="tts-voice-meta">${escapeHtml(gender)} &middot; ${escapeHtml(locale)}</span>
+      </div>`;
+    }).join('');
+
+    if (shown.length === 0) {
+      list.innerHTML = '<div class="tts-voice-empty">No voices found</div>';
+    }
+
+    // Click handlers
+    list.querySelectorAll('.tts-voice-option').forEach(el => {
+      el.addEventListener('click', () => {
+        state.settings.voice = el.dataset.voice;
+        saveSettings();
+        // Update display
+        const input = document.getElementById('tts-voice-search-input');
+        if (input) input.value = el.querySelector('.tts-voice-name').textContent;
+        closeVoiceDropdown();
+      });
     });
+  }
+
+  function openVoiceDropdown() {
+    const dropdown = document.getElementById('tts-voice-dropdown');
+    if (dropdown) {
+      dropdown.classList.add('open');
+      renderVoiceDropdown(document.getElementById('tts-voice-search-input').value);
+    }
+  }
+
+  function closeVoiceDropdown() {
+    const dropdown = document.getElementById('tts-voice-dropdown');
+    if (dropdown) dropdown.classList.remove('open');
   }
 
   // ===== SIDEBAR =====
@@ -166,16 +200,12 @@
       <div class="tts-settings">
         <div class="tts-setting-row">
           <label>Voice</label>
-          <select id="tts-voice-select">
-            <option value="en-US-JennyNeural">Jenny (Female, US)</option>
-            <option value="en-US-AriaNeural">Aria (Female, US)</option>
-            <option value="en-US-GuyNeural">Guy (Male, US)</option>
-            <option value="en-US-DavisNeural">Davis (Male, US)</option>
-            <option value="en-US-JaneNeural">Jane (Female, US)</option>
-            <option value="en-US-JasonNeural">Jason (Male, US)</option>
-            <option value="en-GB-SoniaNeural">Sonia (Female, UK)</option>
-            <option value="en-AU-NatashaNeural">Natasha (Female, AU)</option>
-          </select>
+          <div class="tts-voice-search-container" id="tts-voice-search-container">
+            <input type="text" id="tts-voice-search-input" placeholder="Search voices..." autocomplete="off">
+            <div class="tts-voice-dropdown" id="tts-voice-dropdown">
+              <div class="tts-voice-dropdown-list" id="tts-voice-dropdown-list"></div>
+            </div>
+          </div>
         </div>
         <div class="tts-setting-row">
           <label>Style</label>
@@ -242,15 +272,24 @@
     document.getElementById('tts-hide-all').addEventListener('click', hideAll);
     document.getElementById('tts-regenerate').addEventListener('click', regenerateAll);
 
+    // Voice search input
+    const voiceInput = document.getElementById('tts-voice-search-input');
+    voiceInput.addEventListener('focus', openVoiceDropdown);
+    voiceInput.addEventListener('input', (e) => {
+      openVoiceDropdown();
+      renderVoiceDropdown(e.target.value);
+    });
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('tts-voice-search-container');
+      if (container && !container.contains(e.target)) {
+        closeVoiceDropdown();
+      }
+    });
+
     // Mode tabs
     sidebar.querySelectorAll('.tts-mode-tab').forEach(tab => {
       tab.addEventListener('click', () => switchMode(tab.dataset.mode));
-    });
-
-    // Voice select
-    document.getElementById('tts-voice-select').addEventListener('change', (e) => {
-      state.settings.voice = e.target.value;
-      saveSettings();
     });
 
     // Style select
@@ -313,16 +352,15 @@
   // ===== REGENERATE =====
   function regenerateAll() {
     if (!state.sentences.length) return;
-
     stopPlayback();
     state.audioBlobs = new Array(state.sentences.length).fill(null);
     audioElements = new Array(state.sentences.length).fill(null);
     renderSentences();
     startSynthesis();
-    showTooltip('Regenerating with new settings...');
+    showTooltip('Regenerating...');
   }
 
-  // ===== SENTENCE RENDERING =====
+  // ===== SENTENCE RENDERING (full text, no truncation) =====
   function renderSentences() {
     const list = document.getElementById('tts-sentence-list');
     if (!list) return;
@@ -338,8 +376,7 @@
       if (isPlaying) statusClass = ' playing';
       if (hasError) statusClass = ' error';
 
-      const textClass = isMasked ? 'tts-sentence-text masked' : 'tts-sentence-text revealed';
-      const displayText = escapeHtml(sentence.length > 80 ? sentence.slice(0, 80) + '...' : sentence);
+      const textClass = isMasked ? 'tts-sentence-text masked' : 'tts-sentence-text';
 
       let actionsHtml = '';
       if (isLoading) {
@@ -351,23 +388,27 @@
         `;
       } else if (isReady) {
         actionsHtml = `
-          <button class="tts-action-btn${isPlaying ? ' playing' : ''}" data-action="play" data-idx="${idx}">
-            ${isPlaying ? '&#10074;&#10074;' : '&#9654;'}
-          </button>
-          <div class="tts-progress-container" data-idx="${idx}">
-            <div class="tts-progress-bar" id="tts-progress-${idx}"></div>
+          <div class="tts-playback-row">
+            <button class="tts-action-btn${isPlaying ? ' playing' : ''}" data-action="play" data-idx="${idx}">
+              ${isPlaying ? '&#10074;&#10074;' : '&#9654;'}
+            </button>
+            <div class="tts-progress-container" data-idx="${idx}">
+              <div class="tts-progress-bar" id="tts-progress-${idx}"></div>
+            </div>
+            <span class="tts-duration" id="tts-duration-${idx}">--</span>
           </div>
-          <span class="tts-duration" id="tts-duration-${idx}">--</span>
-          <button class="tts-action-btn" data-action="copy" data-idx="${idx}" title="Copy text">&#128203;</button>
-          <button class="tts-action-btn" data-action="download" data-idx="${idx}" title="Download MP3">&#11015;</button>
-          ${state.mode === 'dictation' ? `<button class="tts-action-btn" data-action="toggle-mask" data-idx="${idx}">${isMasked ? '&#128065;' : '&#128584;'}</button>` : ''}
+          <div class="tts-tools-row">
+            <button class="tts-action-btn" data-action="copy" data-idx="${idx}" title="Copy text">&#128203; Copy</button>
+            <button class="tts-action-btn" data-action="download" data-idx="${idx}" title="Download MP3">&#11015; MP3</button>
+            ${state.mode === 'dictation' ? `<button class="tts-action-btn" data-action="toggle-mask" data-idx="${idx}">${isMasked ? '&#128065; Show' : '&#128584; Hide'}</button>` : ''}
+          </div>
         `;
       }
 
       return `
         <div class="tts-sentence-card${statusClass}" data-idx="${idx}">
           <div class="tts-sentence-num">${idx + 1}.</div>
-          <div class="${textClass}" data-idx="${idx}">${displayText}</div>
+          <div class="${textClass}" data-idx="${idx}">${escapeHtml(sentence)}</div>
           <div class="tts-sentence-actions">${actionsHtml}</div>
         </div>
       `;
@@ -376,6 +417,14 @@
     // Attach event listeners
     list.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', handleSentenceAction);
+    });
+
+    // Progress bar seek (click to seek)
+    list.querySelectorAll('.tts-progress-container').forEach(bar => {
+      bar.addEventListener('click', (e) => {
+        const idx = parseInt(bar.dataset.idx);
+        seekAudio(idx, e, bar);
+      });
     });
 
     // Click masked text to reveal in sidebar
@@ -433,34 +482,36 @@
 
     audio.addEventListener('loadedmetadata', () => {
       const durationEl = document.getElementById(`tts-duration-${idx}`);
-      if (durationEl) {
-        durationEl.textContent = formatTime(audio.duration);
-      }
+      if (durationEl) durationEl.textContent = formatTime(audio.duration);
     });
 
     audio.addEventListener('ended', () => {
       state.currentPlaying = -1;
       renderSentences();
       URL.revokeObjectURL(url);
-
-      if (state.isPlayingAll) {
-        playNextInSequence(idx);
-      }
+      if (state.isPlayingAll) playNextInSequence(idx);
     });
 
-    // Highlight corresponding page mask
-    highlightPageMask(idx);
+    // Highlight overlay mask
+    highlightOverlayMask(idx);
 
     audio.play();
     renderSentences();
   }
 
+  function seekAudio(idx, event, bar) {
+    const audio = audioElements[idx];
+    if (!audio || !audio.duration) return;
+    const rect = bar.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    audio.currentTime = ratio * audio.duration;
+  }
+
   function playAll() {
     state.isPlayingAll = true;
     const firstReady = state.audioBlobs.findIndex(b => b instanceof Blob);
-    if (firstReady >= 0) {
-      playSentence(firstReady);
-    }
+    if (firstReady >= 0) playSentence(firstReady);
   }
 
   function playNextInSequence(currentIdx) {
@@ -471,7 +522,7 @@
       if (state.mode === 'dictation' && state.followAlongPause > 0) {
         setTimeout(() => {
           state.dictationRevealed.add(currentIdx);
-          revealPageMask(currentIdx);
+          revealOverlayMask(currentIdx);
           renderSentences();
           setTimeout(() => playSentence(nextIdx), 1000);
         }, state.followAlongPause * 1000);
@@ -480,10 +531,9 @@
       }
     } else {
       state.isPlayingAll = false;
-      // Reveal last sentence in dictation mode
       if (state.mode === 'dictation') {
         state.dictationRevealed.add(currentIdx);
-        revealPageMask(currentIdx);
+        revealOverlayMask(currentIdx);
       }
       renderSentences();
     }
@@ -544,30 +594,19 @@
   function retrySentence(idx) {
     state.audioBlobs[idx] = null;
     renderSentences();
-
     AzureTTS.synthesize(state.sentences[idx], state.settings)
-      .then(blob => {
-        state.audioBlobs[idx] = blob;
-        renderSentences();
-      })
-      .catch(err => {
-        state.audioBlobs[idx] = { error: err.message };
-        renderSentences();
-      });
+      .then(blob => { state.audioBlobs[idx] = blob; renderSentences(); })
+      .catch(err => { state.audioBlobs[idx] = { error: err.message }; renderSentences(); });
   }
 
   // ===== COPY & DOWNLOAD =====
   function copySentence(idx) {
-    const text = state.sentences[idx];
-    navigator.clipboard.writeText(text).then(() => {
-      showTooltip('Copied!');
-    });
+    navigator.clipboard.writeText(state.sentences[idx]).then(() => showTooltip('Copied!'));
   }
 
   function downloadSentence(idx) {
     const blob = state.audioBlobs[idx];
     if (!(blob instanceof Blob)) return;
-
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -582,164 +621,128 @@
     const tooltip = document.createElement('div');
     tooltip.className = 'tts-copied-tooltip';
     tooltip.textContent = text;
-    tooltip.style.position = 'fixed';
-    tooltip.style.top = '20px';
-    tooltip.style.right = '380px';
-    tooltip.style.zIndex = '2147483642';
+    tooltip.style.cssText = 'position:fixed;top:20px;right:380px;z-index:2147483642';
     document.body.appendChild(tooltip);
     setTimeout(() => tooltip.remove(), 1200);
   }
 
-  // ===== PAGE-LEVEL SENTENCE MASKING (DICTATION MODE) =====
+  // ===== OVERLAY-BASED PAGE MASKING (DICTATION MODE) =====
 
-  /**
-   * Apply dictation mode: find sentences in the page DOM and wrap them with mask elements.
-   */
   function applyDictationMode() {
     state.dictationRevealed.clear();
     removePageMasks();
 
     if (state.selectionRange && state.sentences.length > 0) {
-      applyPageMasks();
+      createOverlayMasks();
     }
-
     renderSentences();
   }
 
   /**
-   * Wrap each sentence in the selected text with a mask span on the actual page.
-   * Uses text node walking within the selection range.
+   * Create overlay divs positioned over each sentence on the page.
+   * Uses Range.getClientRects() — does not modify the page DOM at all.
    */
-  function applyPageMasks() {
-    state.pageMasks = [];
+  function createOverlayMasks() {
+    state.overlayMasks = [];
 
-    try {
-      const range = state.selectionRange;
-      if (!range) return;
-
-      // Get all text nodes within the selection range
-      const textNodes = getTextNodesInRange(range);
-      if (!textNodes.length) return;
-
-      // Concatenate all text content
-      let fullText = '';
-      const nodeMap = []; // {node, startOffset, endOffset, globalStart}
-      textNodes.forEach(tn => {
-        const start = (tn === range.startContainer) ? range.startOffset : 0;
-        const end = (tn === range.endContainer) ? range.endOffset : tn.textContent.length;
-        const text = tn.textContent.substring(start, end);
-        nodeMap.push({
-          node: tn,
-          startOffset: start,
-          endOffset: end,
-          globalStart: fullText.length,
-          text: text
-        });
-        fullText += text;
-      });
-
-      // Find each sentence's position in the full text
-      let searchPos = 0;
-      state.sentences.forEach((sentence, idx) => {
-        const sentenceStart = fullText.indexOf(sentence, searchPos);
-        if (sentenceStart === -1) {
-          state.pageMasks.push(null); // Can't find this sentence
-          return;
-        }
-        const sentenceEnd = sentenceStart + sentence.length;
-        searchPos = sentenceEnd;
-
-        // Find which text nodes this sentence spans
-        const affectedNodes = [];
-        nodeMap.forEach(nm => {
-          const nmEnd = nm.globalStart + nm.text.length;
-          if (nm.globalStart < sentenceEnd && nmEnd > sentenceStart) {
-            // This node overlaps with the sentence
-            const localStart = Math.max(0, sentenceStart - nm.globalStart);
-            const localEnd = Math.min(nm.text.length, sentenceEnd - nm.globalStart);
-            affectedNodes.push({
-              ...nm,
-              sentenceLocalStart: localStart + nm.startOffset,
-              sentenceLocalEnd: localEnd + nm.startOffset
-            });
-          }
-        });
-
-        if (affectedNodes.length === 0) {
-          state.pageMasks.push(null);
-          return;
-        }
-
-        // Simple case: sentence within single text node
-        if (affectedNodes.length === 1) {
-          const an = affectedNodes[0];
-          const maskSpan = wrapTextRange(an.node, an.sentenceLocalStart, an.sentenceLocalEnd, idx);
-          state.pageMasks.push(maskSpan);
-        } else {
-          // Complex case: sentence spans multiple nodes
-          // Wrap each portion and link them
-          const maskGroup = document.createElement('span');
-          maskGroup.className = 'tts-page-mask-group';
-          maskGroup.dataset.idx = idx;
-
-          const wrappedSpans = [];
-          affectedNodes.forEach(an => {
-            const span = wrapTextRange(an.node, an.sentenceLocalStart, an.sentenceLocalEnd, idx);
-            if (span) wrappedSpans.push(span);
-          });
-
-          // Use the first span as the representative mask
-          state.pageMasks.push(wrappedSpans[0] || null);
-        }
-      });
-    } catch (e) {
-      // If DOM manipulation fails, fall back to sidebar-only masking
-      console.warn('Azure TTS: Could not apply page masks', e);
-      state.pageMasks = [];
+    // Create overlay container
+    let container = document.getElementById('tts-overlay-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'tts-overlay-container';
+      container.style.cssText = 'position:absolute;top:0;left:0;width:0;height:0;pointer-events:none;z-index:2147483630;';
+      document.body.appendChild(container);
     }
+    container.innerHTML = '';
+
+    const range = state.selectionRange;
+    if (!range) return;
+
+    // Get all text nodes in the selection
+    const textNodes = getTextNodesInRange(range);
+    if (!textNodes.length) return;
+
+    // Build a map of text content with global positions
+    let fullText = '';
+    const nodeMap = [];
+    textNodes.forEach(tn => {
+      const start = (tn === range.startContainer) ? range.startOffset : 0;
+      const end = (tn === range.endContainer) ? range.endOffset : tn.textContent.length;
+      const text = tn.textContent.substring(start, end);
+      nodeMap.push({ node: tn, startOffset: start, endOffset: end, globalStart: fullText.length, text });
+      fullText += text;
+    });
+
+    // For each sentence, find its position and get bounding rects
+    let searchPos = 0;
+    state.sentences.forEach((sentence, idx) => {
+      const sentenceStart = fullText.indexOf(sentence, searchPos);
+      if (sentenceStart === -1) {
+        state.overlayMasks.push(null);
+        return;
+      }
+      const sentenceEnd = sentenceStart + sentence.length;
+      searchPos = sentenceEnd;
+
+      // Create a Range spanning this sentence
+      const sentenceRange = document.createRange();
+      let startSet = false, endSet = false;
+
+      for (const nm of nodeMap) {
+        const nmEnd = nm.globalStart + nm.text.length;
+
+        if (!startSet && sentenceStart >= nm.globalStart && sentenceStart < nmEnd) {
+          const localOffset = sentenceStart - nm.globalStart + nm.startOffset;
+          sentenceRange.setStart(nm.node, localOffset);
+          startSet = true;
+        }
+        if (!endSet && sentenceEnd > nm.globalStart && sentenceEnd <= nmEnd) {
+          const localOffset = sentenceEnd - nm.globalStart + nm.startOffset;
+          sentenceRange.setEnd(nm.node, localOffset);
+          endSet = true;
+        }
+        if (startSet && endSet) break;
+      }
+
+      if (!startSet || !endSet) {
+        state.overlayMasks.push(null);
+        return;
+      }
+
+      // Get client rects for this sentence
+      const rects = sentenceRange.getClientRects();
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+
+      const overlayGroup = [];
+      for (let i = 0; i < rects.length; i++) {
+        const rect = rects[i];
+        if (rect.width < 2 || rect.height < 2) continue;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'tts-overlay-mask';
+        overlay.dataset.idx = idx;
+        overlay.style.cssText = `
+          position: absolute;
+          top: ${rect.top + scrollY}px;
+          left: ${rect.left + scrollX}px;
+          width: ${rect.width}px;
+          height: ${rect.height}px;
+          pointer-events: auto;
+        `;
+        overlay.addEventListener('click', () => toggleMask(idx));
+        container.appendChild(overlay);
+        overlayGroup.push(overlay);
+      }
+
+      state.overlayMasks.push(overlayGroup);
+    });
   }
 
-  /**
-   * Wrap a portion of a text node with a mask span.
-   */
-  function wrapTextRange(textNode, start, end, sentenceIdx) {
-    try {
-      if (!textNode || !textNode.parentNode) return null;
-      if (start >= end) return null;
-
-      const range = document.createRange();
-      range.setStart(textNode, start);
-      range.setEnd(textNode, end);
-
-      const maskSpan = document.createElement('span');
-      maskSpan.className = 'tts-page-mask';
-      maskSpan.dataset.sentenceIdx = sentenceIdx;
-
-      // Click to toggle reveal
-      maskSpan.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleMask(sentenceIdx);
-      });
-
-      range.surroundContents(maskSpan);
-      return maskSpan;
-    } catch (e) {
-      // surroundContents can fail if range crosses element boundaries
-      return null;
-    }
-  }
-
-  /**
-   * Get all text nodes within a Range.
-   */
   function getTextNodesInRange(range) {
     const nodes = [];
-    const startContainer = range.startContainer;
-    const endContainer = range.endContainer;
-
-    if (startContainer === endContainer && startContainer.nodeType === Node.TEXT_NODE) {
-      return [startContainer];
+    if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
+      return [range.startContainer];
     }
 
     const walker = document.createTreeWalker(
@@ -757,19 +760,17 @@
     );
 
     let node;
-    while (node = walker.nextNode()) {
-      nodes.push(node);
-    }
+    while (node = walker.nextNode()) nodes.push(node);
     return nodes;
   }
 
   function toggleMask(idx) {
     if (state.dictationRevealed.has(idx)) {
       state.dictationRevealed.delete(idx);
-      hidePageMask(idx);
+      hideOverlayMask(idx);
     } else {
       state.dictationRevealed.add(idx);
-      revealPageMask(idx);
+      revealOverlayMask(idx);
     }
     renderSentences();
   }
@@ -777,63 +778,39 @@
   function revealAll() {
     state.sentences.forEach((_, idx) => {
       state.dictationRevealed.add(idx);
-      revealPageMask(idx);
+      revealOverlayMask(idx);
     });
     renderSentences();
   }
 
   function hideAll() {
     state.dictationRevealed.clear();
-    state.pageMasks.forEach((mask, idx) => {
-      hidePageMask(idx);
-    });
+    state.overlayMasks.forEach((_, idx) => hideOverlayMask(idx));
     renderSentences();
   }
 
-  function revealPageMask(idx) {
-    // Reveal main mask
-    if (state.pageMasks[idx]) {
-      state.pageMasks[idx].classList.add('revealed');
-    }
-    // Reveal all spans with same sentence idx
-    document.querySelectorAll(`.tts-page-mask[data-sentence-idx="${idx}"]`).forEach(el => {
-      el.classList.add('revealed');
-    });
+  function revealOverlayMask(idx) {
+    const group = state.overlayMasks[idx];
+    if (group) group.forEach(el => el.classList.add('revealed'));
   }
 
-  function hidePageMask(idx) {
-    if (state.pageMasks[idx]) {
-      state.pageMasks[idx].classList.remove('revealed');
-    }
-    document.querySelectorAll(`.tts-page-mask[data-sentence-idx="${idx}"]`).forEach(el => {
-      el.classList.remove('revealed');
-    });
+  function hideOverlayMask(idx) {
+    const group = state.overlayMasks[idx];
+    if (group) group.forEach(el => el.classList.remove('revealed'));
   }
 
-  function highlightPageMask(idx) {
-    // Remove highlight from all
-    document.querySelectorAll('.tts-page-mask.playing').forEach(el => {
-      el.classList.remove('playing');
-    });
-    // Add highlight to current
-    document.querySelectorAll(`.tts-page-mask[data-sentence-idx="${idx}"]`).forEach(el => {
-      el.classList.add('playing');
-    });
+  function highlightOverlayMask(idx) {
+    // Remove all playing highlights
+    document.querySelectorAll('.tts-overlay-mask.playing').forEach(el => el.classList.remove('playing'));
+    // Add to current
+    const group = state.overlayMasks[idx];
+    if (group) group.forEach(el => el.classList.add('playing'));
   }
 
   function removePageMasks() {
-    // Find all mask spans and unwrap them
-    document.querySelectorAll('.tts-page-mask').forEach(mask => {
-      const parent = mask.parentNode;
-      if (parent) {
-        while (mask.firstChild) {
-          parent.insertBefore(mask.firstChild, mask);
-        }
-        parent.removeChild(mask);
-        parent.normalize(); // Merge adjacent text nodes
-      }
-    });
-    state.pageMasks = [];
+    const container = document.getElementById('tts-overlay-container');
+    if (container) container.innerHTML = '';
+    state.overlayMasks = [];
   }
 
   // ===== SETTINGS =====
@@ -847,16 +824,17 @@
   }
 
   function saveSettings() {
-    browser.runtime.sendMessage({
-      type: 'SAVE_SETTINGS',
-      settings: state.settings
-    });
+    browser.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: state.settings });
   }
 
   function applySettingsToUI() {
-    const voiceSelect = document.getElementById('tts-voice-select');
+    const voiceInput = document.getElementById('tts-voice-search-input');
     const styleSelect = document.getElementById('tts-style-select');
-    if (voiceSelect) voiceSelect.value = state.settings.voice;
+    if (voiceInput) {
+      // Find display name for current voice
+      const v = state.voices.find(v => (v.ShortName || '') === state.settings.voice);
+      voiceInput.value = v ? (v.DisplayName || v.ShortName) : state.settings.voice;
+    }
     if (styleSelect) styleSelect.value = state.settings.style || '';
 
     document.querySelectorAll('.tts-speed-btn').forEach(btn => {
