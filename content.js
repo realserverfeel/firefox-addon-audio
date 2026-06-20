@@ -856,9 +856,9 @@
       return { top, left, width: right - left, height: bottom - top };
     });
 
-    // Filter out tiny fragments (width < 20% of widest line)
-    const maxWidth = Math.max(...merged.map(r => r.width));
-    return merged.filter(r => r.width >= maxWidth * 0.15);
+    // Filter out tiny fragments: only remove if both very narrow AND very short
+    // (e.g. superscript markers). Keep short last-lines of sentences.
+    return merged.filter(r => !(r.width < 20 && r.height < 14));
   }
 
   function getTextNodesInRange(range) {
@@ -952,10 +952,10 @@
       <button class="tts-overlay-pane-btn" data-pane-action="reveal" title="Reveal text">&#128065;</button>
     `;
 
-    // Position: directly above the hovered overlay rect, centered horizontally
+    // Position: X follows mouse cursor, Y anchored above the mask rect
     const maskRect = event.target.getBoundingClientRect();
     const paneTop = maskRect.top - 32;
-    const paneLeft = maskRect.left + maskRect.width / 2;
+    const paneLeft = event.clientX;
     pane.style.cssText = `
       position: fixed;
       top: ${paneTop < 4 ? maskRect.bottom + 4 : paneTop}px;
