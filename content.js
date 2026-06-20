@@ -952,14 +952,14 @@
       <button class="tts-overlay-pane-btn" data-pane-action="reveal" title="Reveal text">&#128065;</button>
     `;
 
-    // Position: at mouse cursor
-    const mouseY = event.clientY;
-    const mouseX = event.clientX;
-    const paneTop = mouseY - 36;
+    // Position: directly above the hovered overlay rect, centered horizontally
+    const maskRect = event.target.getBoundingClientRect();
+    const paneTop = maskRect.top - 32;
+    const paneLeft = maskRect.left + maskRect.width / 2;
     pane.style.cssText = `
       position: fixed;
-      top: ${paneTop < 4 ? mouseY + 8 : paneTop}px;
-      left: ${Math.max(60, Math.min(mouseX, window.innerWidth - 60))}px;
+      top: ${paneTop < 4 ? maskRect.bottom + 4 : paneTop}px;
+      left: ${Math.max(60, Math.min(paneLeft, window.innerWidth - 60))}px;
       transform: translateX(-50%);
       z-index: 2147483645;
     `;
