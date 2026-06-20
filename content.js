@@ -416,11 +416,13 @@
       const isLoading = state.audioBlobs[idx] === null;
       const hasError = state.audioBlobs[idx] && state.audioBlobs[idx].error;
       const isReady = state.audioBlobs[idx] instanceof Blob;
-      const isPlaying = state.currentPlaying === idx;
+      const isPlaying = state.currentPlaying === idx && currentAudio && !currentAudio.paused;
+      const isPaused = state.currentPlaying === idx && currentAudio && currentAudio.paused;
+      const isActive = isPlaying || isPaused;
       const isMasked = state.mode === 'dictation' && !state.dictationRevealed.has(idx);
 
       let statusClass = '';
-      if (isPlaying) statusClass = ' playing';
+      if (isActive) statusClass = ' playing';
       if (hasError) statusClass = ' error';
 
       const textClass = isMasked ? 'tts-sentence-text masked' : 'tts-sentence-text';
@@ -436,9 +438,10 @@
       } else if (isReady) {
         actionsHtml = `
           <div class="tts-playback-row">
-            <button class="tts-action-btn${isPlaying ? ' playing' : ''}" data-action="play" data-idx="${idx}">
+            <button class="tts-action-btn${isActive ? ' playing' : ''}" data-action="play" data-idx="${idx}">
               ${isPlaying ? '&#10074;&#10074;' : '&#9654;'}
             </button>
+            <button class="tts-action-btn" data-action="replay" data-idx="${idx}" title="Replay from start">&#8634;</button>
             <div class="tts-progress-container" data-idx="${idx}">
               <div class="tts-progress-bar" id="tts-progress-${idx}"></div>
             </div>
@@ -489,11 +492,14 @@
 
     switch (action) {
       case 'play':
-        if (state.currentPlaying === idx) {
+        if (state.currentPlaying === idx && currentAudio) {
           pausePlayback();
         } else {
           playSentence(idx);
         }
+        break;
+      case 'replay':
+        playSentence(idx);
         break;
       case 'retry':
         retrySentence(idx);
@@ -593,6 +599,7 @@
       } else {
         currentAudio.pause();
       }
+      renderSentences();
     }
   }
 
