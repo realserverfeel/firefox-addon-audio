@@ -1,0 +1,160 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 360px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+}
+
+.popup-container {
+  padding: 20px;
+}
+
+h2 {
+  font-size: 18px;
+  color: #0078d4;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #0078d4;
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.1);
+}
+
+.toggle-btn {
+  position: absolute;
+  right: 8px;
+  top: 26px;
+  background: none;
+  border: none;
+  color: #0078d4;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: #f0f0f0;
+}
+
+.btn.primary {
+  background: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+.btn.primary:hover {
+  background: #005a9e;
+}
+
+.status {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: none;
+  margin-bottom: 12px;
+}
+
+.status.success {
+  display: block;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.status.error {
+  display: block;
+  background: #fef0f0;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.help {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.help h3 {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #444;
+}
+
+.help ol {
+  padding-left: 20px;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.8;
+}
+
+.help a {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+.help a:hover {
+  text-decoration: underline;
+}
+
+.note {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+}
