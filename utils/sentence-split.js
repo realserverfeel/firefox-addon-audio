@@ -30,6 +30,17 @@ const SentenceSplitter = (() => {
       const ch = chars[i];
       current += ch;
 
+      // CJK full-width sentence-ending punctuation — break immediately (no space needed)
+      if (ch === '。' || ch === '！' || ch === '？') {
+        const trimmed = current.trim();
+        if (trimmed) {
+          sentences.push(trimmed);
+        }
+        current = '';
+        i++;
+        continue;
+      }
+
       if (ch === '.' || ch === '!' || ch === '?') {
         // Check for ellipsis
         if (ch === '.' && i + 2 < chars.length && chars[i + 1] === '.' && chars[i + 2] === '.') {
