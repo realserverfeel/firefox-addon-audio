@@ -797,7 +797,12 @@
         overlay.addEventListener('mouseenter', (e) => {
           // Highlight ALL rects for this sentence
           document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
-          showOverlayPane(idx, e);
+          // Delay pane display by 300ms
+          if (overlayPaneShowTimeout) clearTimeout(overlayPaneShowTimeout);
+          overlayPaneShowTimeout = setTimeout(() => {
+            overlayPaneShowTimeout = null;
+            showOverlayPane(idx, e);
+          }, 300);
         });
         overlay.addEventListener('mouseleave', (e) => {
           const related = e.relatedTarget;
@@ -805,6 +810,8 @@
             if (related.closest && related.closest('.tts-overlay-pane')) return;
             if (related.classList && related.classList.contains('tts-overlay-mask') && related.dataset.idx === String(idx)) return;
           }
+          // Cancel pending show if mouse left before 300ms
+          if (overlayPaneShowTimeout) { clearTimeout(overlayPaneShowTimeout); overlayPaneShowTimeout = null; }
           // Remove hover from all rects of this sentence
           document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.remove('hovered'));
           scheduleHidePane();
@@ -932,6 +939,7 @@
   let overlayPaneEl = null;
   let overlayPaneTimeout = null;
   let overlayPaneIdx = -1;
+  let overlayPaneShowTimeout = null;
 
   function showOverlayPane(idx, event) {
     // If pane already showing for same sentence, just cancel any pending hide
@@ -998,6 +1006,7 @@
 
 
   function forceRemovePane() {
+    if (overlayPaneShowTimeout) { clearTimeout(overlayPaneShowTimeout); overlayPaneShowTimeout = null; }
     if (overlayPaneTimeout) { clearTimeout(overlayPaneTimeout); overlayPaneTimeout = null; }
     if (overlayPaneEl && overlayPaneEl.parentNode) {
       overlayPaneEl.parentNode.removeChild(overlayPaneEl);
