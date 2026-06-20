@@ -795,7 +795,15 @@
           toggleMask(idx);
         });
         overlay.addEventListener('mouseenter', (e) => showOverlayPane(idx, e));
-        overlay.addEventListener('mouseleave', hideOverlayPane);
+        overlay.addEventListener('mouseleave', (e) => {
+          // Don't hide if mouse moves to another rect of same sentence or to the pane
+          const related = e.relatedTarget;
+          if (related) {
+            if (related.closest && related.closest('.tts-overlay-pane')) return;
+            if (related.classList && related.classList.contains('tts-overlay-mask') && related.dataset.idx === String(idx)) return;
+          }
+          scheduleHidePane();
+        });
         container.appendChild(overlay);
         overlayGroup.push(overlay);
       }
@@ -812,7 +820,8 @@
     const rects = [];
     for (let i = 0; i < rectList.length; i++) {
       const r = rectList[i];
-      if (r.width < 1 || r.height < 1) continue;
+      // Skip tiny rects (superscript numbers, footnote markers etc.)
+      if (r.width < 2 || r.height < 12) continue;
       rects.push({ top: r.top, left: r.left, right: r.right, bottom: r.bottom });
     }
     if (!rects.length) return [];
@@ -977,9 +986,7 @@
     overlayPaneTimeout = setTimeout(() => forceRemovePane(), 250);
   }
 
-  function hideOverlayPane() {
-    scheduleHidePane();
-  }
+
 
   function forceRemovePane() {
     if (overlayPaneTimeout) { clearTimeout(overlayPaneTimeout); overlayPaneTimeout = null; }
