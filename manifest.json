@@ -2,6 +2,11 @@
   "manifest_version": 2,
   "name": "Azure TTS Reader",
   "version": "1.0.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "azure-tts-reader@realserverfeel"
+    }
+  },
   "description": "Select text on any webpage and listen to it using Azure Text-to-Speech. Supports per-sentence playback, dictation mode, and more.",
   "permissions": [
     "activeTab",
