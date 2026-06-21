@@ -958,6 +958,11 @@
     document.removeEventListener('mousemove', handleOverlayMouseMove, true);
   }
 
+  function setHoverClass(idx, add) {
+    const group = state.overlayMasks[idx];
+    if (group) group.forEach(el => { if (add) el.classList.add('hovered'); else el.classList.remove('hovered'); });
+  }
+
   function handleOverlayMouseMove(e) {
     // Check if mouse is over a pane
     const overPane = overlayPaneEl && (overlayPaneEl === e.target || overlayPaneEl.contains(e.target));
@@ -967,12 +972,21 @@
       return;
     }
 
-    // Check if mouse is over an overlay mask
-    const maskEl = e.target.closest ? e.target.closest('.tts-overlay-mask') : null;
+    // Check if mouse is over an overlay mask (use elementsFromPoint for robustness)
+    let maskEl = e.target.closest ? e.target.closest('.tts-overlay-mask') : null;
+    if (!maskEl) {
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      for (const el of els) {
+        if (el.classList && el.classList.contains('tts-overlay-mask') && !el.classList.contains('revealed')) {
+          maskEl = el;
+          break;
+        }
+      }
+    }
     if (!maskEl) {
       // Mouse left all masks and pane
       if (hoverSentenceIdx >= 0) {
-        document.querySelectorAll(`.tts-overlay-mask[data-idx="${hoverSentenceIdx}"]`).forEach(el => el.classList.remove('hovered'));
+        setHoverClass(hoverSentenceIdx, false);
         hoverSentenceIdx = -1;
       }
       if (overlayPaneShowTimeout) { clearTimeout(overlayPaneShowTimeout); overlayPaneShowTimeout = null; }
@@ -990,10 +1004,10 @@
 
     // Different sentence — switch hover
     if (hoverSentenceIdx >= 0) {
-      document.querySelectorAll(`.tts-overlay-mask[data-idx="${hoverSentenceIdx}"]`).forEach(el => el.classList.remove('hovered'));
+      setHoverClass(hoverSentenceIdx, false);
     }
     hoverSentenceIdx = idx;
-    document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
+    setHoverClass(idx, true);
 
     // Cancel any pending show/hide
     if (overlayPaneShowTimeout) { clearTimeout(overlayPaneShowTimeout); overlayPaneShowTimeout = null; }
@@ -1075,7 +1089,7 @@
     overlayPaneEl = null;
     overlayPaneIdx = -1;
     if (hoverSentenceIdx >= 0) {
-      document.querySelectorAll(`.tts-overlay-mask[data-idx="${hoverSentenceIdx}"]`).forEach(el => el.classList.remove('hovered'));
+      setHoverClass(hoverSentenceIdx, false);
       hoverSentenceIdx = -1;
     }
   }
