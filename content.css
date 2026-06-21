@@ -528,13 +528,13 @@
 }
 
 .tts-overlay-mask.playing.revealed {
-  background: transparent !important;
+  background: rgba(0, 120, 212, 0.08) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  animation: none !important;
-  box-shadow: none !important;
+  animation: tts-overlay-glow 2s ease-in-out infinite !important;
+  box-shadow: 0 0 0 2px rgba(0,120,212,0.5) !important;
   pointer-events: none !important;
-  border-radius: 0;
+  border-radius: 3px;
 }
 
 @keyframes tts-overlay-glow {

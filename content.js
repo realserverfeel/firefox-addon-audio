@@ -38,6 +38,7 @@
     loadSettings();
     listenForSelection();
     loadVoices();
+    listenForClickOutside();
   }
 
   // ===== FLOATING ACTION BUTTON =====
@@ -65,6 +66,22 @@
     } else {
       openSidebar();
     }
+  }
+
+  // ===== CLICK OUTSIDE TO HIDE SIDEBAR =====
+  function listenForClickOutside() {
+    document.addEventListener('click', (e) => {
+      if (!state.sidebarOpen) return;
+      const sidebar = document.getElementById('azure-tts-sidebar');
+      const fab = document.getElementById('azure-tts-fab');
+      const container = document.getElementById('tts-overlay-container');
+      const pane = document.querySelector('.tts-overlay-pane');
+      if (sidebar && sidebar.contains(e.target)) return;
+      if (fab && fab.contains(e.target)) return;
+      if (container && container.contains(e.target)) return;
+      if (pane && pane.contains(e.target)) return;
+      closeSidebar();
+    }, true);
   }
 
   // ===== SELECTION LISTENER =====
