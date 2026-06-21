@@ -1141,6 +1141,7 @@
         e.stopPropagation();
         const action = btn.dataset.paneAction;
         if (action === 'focus') {
+          if (!state.sidebarOpen) openSidebar();
           const card = document.querySelector(`.tts-sentence-card[data-idx="${idx}"]`);
           if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else if (action === 'play') {
