@@ -959,8 +959,10 @@
   }
 
   function setHoverClass(idx, add) {
-    const group = state.overlayMasks[idx];
-    if (group) group.forEach(el => { if (add) el.classList.add('hovered'); else el.classList.remove('hovered'); });
+    document.querySelectorAll('.tts-overlay-mask.hovered').forEach(el => el.classList.remove('hovered'));
+    if (add) {
+      document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
+    }
   }
 
   function handleOverlayMouseMove(e) {
