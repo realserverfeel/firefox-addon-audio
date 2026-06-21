@@ -822,8 +822,7 @@
 
         // Hover highlight via inline styles (CSS classes don't work in Firefox content scripts)
         overlay.addEventListener('mouseenter', () => {
-          const allByQuery = document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`);
-          allByQuery.forEach((el, i) => {
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
             el.style.outline = '3px solid #0078D4';
           });
         });
@@ -837,6 +836,18 @@
             el.style.outline = '';
           });
         });
+
+        // Touch highlight for tablets — touchstart highlights entire sentence
+        overlay.addEventListener('touchstart', () => {
+          // Clear any previous touch highlight
+          document.querySelectorAll('.tts-overlay-mask').forEach(el => {
+            el.style.outline = '';
+          });
+          // Highlight all rects of this sentence
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
+            el.style.outline = '3px solid #0078D4';
+          });
+        }, { passive: true });
 
         container.appendChild(overlay);
         overlayGroup.push(overlay);
