@@ -984,9 +984,25 @@
   function highlightOverlayMask(idx) {
     // Remove all playing highlights
     document.querySelectorAll('.tts-overlay-mask.playing').forEach(el => el.classList.remove('playing'));
+    document.querySelectorAll('.tts-overlay-mask.playing-flash').forEach(el => {
+      el.classList.remove('playing-flash', 'flash-fade');
+    });
     // Add playing to ALL rects for this sentence (by data-idx attribute)
     const masks = document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`);
+    const isRevealed = masks.length > 0 && masks[0].classList.contains('revealed');
     masks.forEach(el => el.classList.add('playing'));
+
+    // For revealed sentences: flash blue frame briefly then fade out
+    if (isRevealed) {
+      masks.forEach(el => el.classList.add('playing-flash'));
+      setTimeout(() => {
+        masks.forEach(el => el.classList.add('flash-fade'));
+      }, 1200);
+      setTimeout(() => {
+        masks.forEach(el => el.classList.remove('playing-flash', 'flash-fade'));
+      }, 1700);
+    }
+
     // Auto-scroll to the playing sentence if not already visible
     if (masks.length > 0) {
       const rect = masks[0].getBoundingClientRect();
