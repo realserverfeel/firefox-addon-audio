@@ -492,11 +492,14 @@
   -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
   pointer-events: none !important;
-  border-left: 3px solid rgba(0, 120, 212, 0.5);
   border-radius: 0;
 }
 
-.tts-overlay-mask.revealed .tts-mask-edge {
+.tts-overlay-mask.revealed.tts-mask-first {
+  border-left: 3px solid rgba(0, 120, 212, 0.5);
+}
+
+.tts-overlay-mask.revealed.tts-mask-first .tts-mask-edge {
   display: block;
 }
 
@@ -532,7 +535,6 @@
   animation: none !important;
   box-shadow: none !important;
   pointer-events: none !important;
-  border-left: 3px solid rgba(0, 120, 212, 0.5);
   border-radius: 0;
 }
 

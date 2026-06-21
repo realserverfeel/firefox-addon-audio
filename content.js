@@ -790,9 +790,11 @@
       const merged = mergeRectsOnSameLine(rawRects);
 
       const overlayGroup = [];
-      for (const rect of merged) {
+      for (let ri = 0; ri < merged.length; ri++) {
+        const rect = merged[ri];
         const overlay = document.createElement('div');
-        overlay.className = 'tts-overlay-mask' + (idx % 2 === 1 ? ' tts-mask-alt' : '');
+        const isFirst = ri === 0;
+        overlay.className = 'tts-overlay-mask' + (idx % 2 === 1 ? ' tts-mask-alt' : '') + (isFirst ? ' tts-mask-first' : '');
         overlay.dataset.idx = idx;
         overlay.style.cssText = `
           position: absolute;
@@ -802,14 +804,16 @@
           height: ${rect.height}px;
           pointer-events: auto;
         `;
-        // Edge bar for re-masking after reveal
-        const edge = document.createElement('div');
-        edge.className = 'tts-mask-edge';
-        edge.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleMask(idx);
-        });
-        overlay.appendChild(edge);
+        // Edge bar for re-masking after reveal (first rect only)
+        if (isFirst) {
+          const edge = document.createElement('div');
+          edge.className = 'tts-mask-edge';
+          edge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMask(idx);
+          });
+          overlay.appendChild(edge);
+        }
 
         overlay.addEventListener('click', (e) => {
           e.stopPropagation();
