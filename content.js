@@ -820,6 +820,21 @@
           toggleMask(idx);
         });
 
+        // Direct mouseenter/mouseleave for hover highlighting (most reliable)
+        overlay.addEventListener('mouseenter', () => {
+          document.querySelectorAll('.tts-overlay-mask.hovered').forEach(el => el.classList.remove('hovered'));
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
+        });
+        overlay.addEventListener('mouseleave', (e) => {
+          // Don't remove if moving to another rect of the same sentence
+          const related = e.relatedTarget;
+          if (related && related.closest && related.closest('.tts-overlay-mask')) {
+            const relatedIdx = parseInt(related.closest('.tts-overlay-mask').dataset.idx);
+            if (relatedIdx === idx) return;
+          }
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.remove('hovered'));
+        });
+
         container.appendChild(overlay);
         overlayGroup.push(overlay);
       }
@@ -958,13 +973,6 @@
     document.removeEventListener('mousemove', handleOverlayMouseMove, true);
   }
 
-  function setHoverClass(idx, add) {
-    document.querySelectorAll('.tts-overlay-mask.hovered').forEach(el => el.classList.remove('hovered'));
-    if (add) {
-      document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
-    }
-  }
-
   function handleOverlayMouseMove(e) {
     // Check if mouse is over a pane
     const overPane = overlayPaneEl && (overlayPaneEl === e.target || overlayPaneEl.contains(e.target));
@@ -988,7 +996,6 @@
     if (!maskEl) {
       // Mouse left all masks and pane
       if (hoverSentenceIdx >= 0) {
-        setHoverClass(hoverSentenceIdx, false);
         hoverSentenceIdx = -1;
       }
       if (overlayPaneShowTimeout) { clearTimeout(overlayPaneShowTimeout); overlayPaneShowTimeout = null; }
@@ -1005,11 +1012,7 @@
     }
 
     // Different sentence — switch hover
-    if (hoverSentenceIdx >= 0) {
-      setHoverClass(hoverSentenceIdx, false);
-    }
     hoverSentenceIdx = idx;
-    setHoverClass(idx, true);
 
     // Cancel any pending show/hide
     if (overlayPaneShowTimeout) { clearTimeout(overlayPaneShowTimeout); overlayPaneShowTimeout = null; }
@@ -1090,10 +1093,7 @@
     }
     overlayPaneEl = null;
     overlayPaneIdx = -1;
-    if (hoverSentenceIdx >= 0) {
-      setHoverClass(hoverSentenceIdx, false);
-      hoverSentenceIdx = -1;
-    }
+    hoverSentenceIdx = -1;
   }
 
   function removePageMasks() {
