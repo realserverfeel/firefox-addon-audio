@@ -393,6 +393,20 @@
     state.sidebarOpen = false;
   }
 
+  function focusSidebarCard(idx) {
+    // Remove previous focus highlights
+    document.querySelectorAll('.tts-sentence-card').forEach(c => {
+      c.style.removeProperty('background');
+      c.style.removeProperty('border-left');
+    });
+    const card = document.querySelector(`.tts-sentence-card[data-idx="${idx}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.setProperty('background', '#d0e8ff', 'important');
+      card.style.setProperty('border-left', '3px solid #0078d4', 'important');
+    }
+  }
+
   function switchMode(mode) {
     state.mode = mode;
     const tabs = document.querySelectorAll('.tts-mode-tab');
@@ -1142,17 +1156,7 @@
         const action = btn.dataset.paneAction;
         if (action === 'focus') {
           if (!state.sidebarOpen) openSidebar();
-          const card = document.querySelector(`.tts-sentence-card[data-idx="${idx}"]`);
-          if (card) {
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Flash highlight to draw attention
-            card.style.setProperty('background', '#d0e8ff', 'important');
-            card.style.setProperty('border-left', '3px solid #0078d4', 'important');
-            setTimeout(() => {
-              card.style.removeProperty('background');
-              card.style.removeProperty('border-left');
-            }, 1500);
-          }
+          focusSidebarCard(idx);
         } else if (action === 'play') {
           playSentence(idx);
           const card = document.querySelector(`.tts-sentence-card[data-idx="${idx}"]`);
