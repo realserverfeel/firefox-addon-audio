@@ -80,6 +80,7 @@
 
   // ===== TEXT PROCESSING =====
   function processText(text) {
+    stopPlayback();
     removePageMasks();
     state.sentences = SentenceSplitter.split(text);
     state.audioBlobs = new Array(state.sentences.length).fill(null);
@@ -373,8 +374,6 @@
     const sidebar = document.getElementById('azure-tts-sidebar');
     sidebar.classList.remove('open');
     state.sidebarOpen = false;
-    stopPlayback();
-    removePageMasks();
   }
 
   function switchMode(mode) {
