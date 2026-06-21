@@ -984,22 +984,33 @@
   function highlightOverlayMask(idx) {
     // Remove all playing highlights
     document.querySelectorAll('.tts-overlay-mask.playing').forEach(el => el.classList.remove('playing'));
-    document.querySelectorAll('.tts-overlay-mask.playing-flash').forEach(el => {
-      el.classList.remove('playing-flash', 'flash-fade');
-    });
+
     // Add playing to ALL rects for this sentence (by data-idx attribute)
     const masks = document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`);
     const isRevealed = masks.length > 0 && masks[0].classList.contains('revealed');
     masks.forEach(el => el.classList.add('playing'));
 
-    // For revealed sentences: flash blue frame briefly then fade out
+    // For revealed sentences: flash blue frame briefly then fade out (inline styles)
     if (isRevealed) {
-      masks.forEach(el => el.classList.add('playing-flash'));
+      masks.forEach(el => {
+        el.style.background = 'rgba(210, 228, 250, 0.92)';
+        el.style.boxShadow = '0 0 0 1.5px rgba(0,120,212,0.45), 0 2px 8px rgba(0,120,212,0.15)';
+        el.style.borderRadius = '3px';
+        el.style.pointerEvents = 'none';
+        el.style.transition = 'opacity 0.5s ease-out';
+      });
       setTimeout(() => {
-        masks.forEach(el => el.classList.add('flash-fade'));
+        masks.forEach(el => { el.style.opacity = '0'; });
       }, 1200);
       setTimeout(() => {
-        masks.forEach(el => el.classList.remove('playing-flash', 'flash-fade'));
+        masks.forEach(el => {
+          el.style.background = '';
+          el.style.boxShadow = '';
+          el.style.borderRadius = '';
+          el.style.pointerEvents = '';
+          el.style.transition = '';
+          el.style.opacity = '';
+        });
       }, 1700);
     }
 

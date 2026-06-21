@@ -537,17 +537,7 @@
   border-radius: 0;
 }
 
-.tts-overlay-mask.playing-flash {
-  background: rgba(0, 120, 212, 0.1) !important;
-  box-shadow: 0 0 0 2px rgba(0,120,212,0.5) !important;
-  pointer-events: none !important;
-  border-radius: 3px;
-  transition: opacity 0.5s ease-out;
-}
 
-.tts-overlay-mask.playing-flash.flash-fade {
-  opacity: 0 !important;
-}
 
 @keyframes tts-overlay-glow {
   0%, 100% {
