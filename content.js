@@ -957,7 +957,16 @@
     // Remove all playing highlights
     document.querySelectorAll('.tts-overlay-mask.playing').forEach(el => el.classList.remove('playing'));
     // Add playing to ALL rects for this sentence (by data-idx attribute)
-    document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('playing'));
+    const masks = document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`);
+    masks.forEach(el => el.classList.add('playing'));
+    // Auto-scroll to the playing sentence if not already visible
+    if (masks.length > 0) {
+      const rect = masks[0].getBoundingClientRect();
+      const inView = rect.top >= 0 && rect.bottom <= window.innerHeight;
+      if (!inView) {
+        masks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
   }
 
   // ===== OVERLAY HOVER PANE (robust mousemove-based) =====
