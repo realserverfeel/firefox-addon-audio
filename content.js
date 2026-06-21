@@ -822,18 +822,19 @@
 
         // Hover highlight via inline styles (CSS classes don't work in Firefox content scripts)
         overlay.addEventListener('mouseenter', () => {
-          if (overlay._hoverLeaveTimer) { clearTimeout(overlay._hoverLeaveTimer); overlay._hoverLeaveTimer = null; }
           document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
-            if (el._hoverLeaveTimer) { clearTimeout(el._hoverLeaveTimer); el._hoverLeaveTimer = null; }
-            el.style.outline = '2px solid rgba(0,120,212,0.45)';
+            el.style.outline = '2px solid rgba(0,120,212,0.7)';
           });
         });
-        overlay.addEventListener('mouseleave', () => {
-          overlay._hoverLeaveTimer = setTimeout(() => {
-            document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
-              el.style.outline = '';
-            });
-          }, 50);
+        overlay.addEventListener('mouseleave', (e) => {
+          const related = e.relatedTarget;
+          if (related) {
+            const relMask = related.closest ? related.closest('.tts-overlay-mask') : null;
+            if (relMask && parseInt(relMask.dataset.idx) === idx) return;
+          }
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
+            el.style.outline = '';
+          });
         });
 
         container.appendChild(overlay);
