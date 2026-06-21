@@ -487,10 +487,7 @@
 }
 
 .tts-overlay-mask.revealed {
-  opacity: 0;
-  pointer-events: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  display: none !important;
 }
 
 /* Playing state: fully opaque, subtle blue tint + border */
@@ -501,11 +498,7 @@
 }
 
 .tts-overlay-mask.playing.revealed {
-  opacity: 0;
-  animation: none;
-  pointer-events: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  display: none !important;
 }
 
 @keyframes tts-overlay-glow {
