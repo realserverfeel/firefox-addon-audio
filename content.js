@@ -990,26 +990,27 @@
     const isRevealed = masks.length > 0 && masks[0].classList.contains('revealed');
     masks.forEach(el => el.classList.add('playing'));
 
-    // For revealed sentences: flash blue frame briefly then fade out (inline styles)
+    // For revealed sentences: flash blue frame briefly then fade out
+    // Must use setProperty with 'important' to override .revealed's !important CSS
     if (isRevealed) {
       masks.forEach(el => {
-        el.style.background = 'rgba(210, 228, 250, 0.92)';
-        el.style.boxShadow = '0 0 0 1.5px rgba(0,120,212,0.45), 0 2px 8px rgba(0,120,212,0.15)';
-        el.style.borderRadius = '3px';
-        el.style.pointerEvents = 'none';
-        el.style.transition = 'opacity 0.5s ease-out';
+        el.style.setProperty('background', 'rgba(210, 228, 250, 0.92)', 'important');
+        el.style.setProperty('box-shadow', '0 0 0 1.5px rgba(0,120,212,0.45), 0 2px 8px rgba(0,120,212,0.15)', 'important');
+        el.style.setProperty('border-radius', '3px', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+        el.style.setProperty('transition', 'opacity 0.5s ease-out', 'important');
       });
       setTimeout(() => {
-        masks.forEach(el => { el.style.opacity = '0'; });
+        masks.forEach(el => { el.style.setProperty('opacity', '0', 'important'); });
       }, 1200);
       setTimeout(() => {
         masks.forEach(el => {
-          el.style.background = '';
-          el.style.boxShadow = '';
-          el.style.borderRadius = '';
-          el.style.pointerEvents = '';
-          el.style.transition = '';
-          el.style.opacity = '';
+          el.style.removeProperty('background');
+          el.style.removeProperty('box-shadow');
+          el.style.removeProperty('border-radius');
+          el.style.removeProperty('pointer-events');
+          el.style.removeProperty('transition');
+          el.style.removeProperty('opacity');
         });
       }, 1700);
     }
