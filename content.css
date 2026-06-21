@@ -487,7 +487,35 @@
 }
 
 .tts-overlay-mask.revealed {
-  display: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  border-left: 3px solid rgba(0, 120, 212, 0.5);
+  border-radius: 0;
+}
+
+.tts-overlay-mask.revealed .tts-mask-edge {
+  display: block;
+}
+
+.tts-mask-edge {
+  display: none;
+  position: absolute;
+  left: -3px;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: pointer;
+  pointer-events: auto !important;
+  border-radius: 2px 0 0 2px;
+  background: rgba(0, 120, 212, 0.15);
+  transition: background 0.2s ease;
+}
+
+.tts-mask-edge:hover {
+  background: rgba(0, 120, 212, 0.4);
 }
 
 /* Playing state: fully opaque, subtle blue tint + border */
@@ -498,7 +526,14 @@
 }
 
 .tts-overlay-mask.playing.revealed {
-  display: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  border-left: 3px solid rgba(0, 120, 212, 0.5);
+  border-radius: 0;
 }
 
 @keyframes tts-overlay-glow {

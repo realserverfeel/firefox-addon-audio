@@ -802,6 +802,15 @@
           height: ${rect.height}px;
           pointer-events: auto;
         `;
+        // Edge bar for re-masking after reveal
+        const edge = document.createElement('div');
+        edge.className = 'tts-mask-edge';
+        edge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleMask(idx);
+        });
+        overlay.appendChild(edge);
+
         overlay.addEventListener('click', (e) => {
           e.stopPropagation();
           toggleMask(idx);
