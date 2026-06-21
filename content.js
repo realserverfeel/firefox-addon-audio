@@ -820,22 +820,28 @@
           toggleMask(idx);
         });
 
-        // Hover highlight: use inline styles to bypass CSS specificity
+        // Hover highlight with debug logging
         overlay.addEventListener('mouseenter', () => {
-          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
-            el.style.outline = '2px solid rgba(0,120,212,0.5)';
-            el.style.outlineOffset = '-1px';
+          const allByQuery = document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`);
+          const groupLen = state.overlayMasks[idx] ? state.overlayMasks[idx].length : 0;
+          console.log(`[TTS] mouseenter idx=${idx}, querySelectorAll found ${allByQuery.length}, group has ${groupLen}`);
+          allByQuery.forEach((el, i) => {
+            el.style.outline = '3px solid red';
+            console.log(`[TTS]   mask ${i}: outline set, connected=${el.isConnected}, parent=${el.parentNode?.id}`);
           });
         });
         overlay.addEventListener('mouseleave', (e) => {
           const related = e.relatedTarget;
           if (related) {
             const relMask = related.closest ? related.closest('.tts-overlay-mask') : null;
-            if (relMask && parseInt(relMask.dataset.idx) === idx) return;
+            if (relMask && parseInt(relMask.dataset.idx) === idx) {
+              console.log(`[TTS] mouseleave idx=${idx} -> same sentence, keeping outline`);
+              return;
+            }
           }
+          console.log(`[TTS] mouseleave idx=${idx} -> removing outlines`);
           document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
             el.style.outline = '';
-            el.style.outlineOffset = '';
           });
         });
 
@@ -967,14 +973,41 @@
   let overlayPaneIdx = -1;
   let overlayPaneShowTimeout = null;
   let hoverSentenceIdx = -1; // which sentence the mouse is currently over
+  let hoverHighlightIdx = -1; // which sentence has hover outline
+  let hoverRAF = null; // requestAnimationFrame ID for hover polling
+
+  // Poll every frame: detect CSS :hover on any mask, highlight all rects of that sentence
+  function pollHoverHighlight() {
+    const hovered = document.querySelector('.tts-overlay-mask:hover');
+    const idx = hovered ? parseInt(hovered.dataset.idx) : -1;
+    if (idx !== hoverHighlightIdx) {
+      // Remove old outlines
+      if (hoverHighlightIdx >= 0) {
+        document.querySelectorAll(`.tts-overlay-mask[data-idx="${hoverHighlightIdx}"]`).forEach(el => {
+          el.style.outline = '';
+        });
+      }
+      // Add new outlines
+      if (idx >= 0) {
+        document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
+          el.style.outline = '2px solid rgba(0,120,212,0.5)';
+        });
+      }
+      hoverHighlightIdx = idx;
+    }
+    hoverRAF = requestAnimationFrame(pollHoverHighlight);
+  }
 
   // Global mousemove handler — installed once when overlay container is created
   function installOverlayHoverHandler() {
     document.addEventListener('mousemove', handleOverlayMouseMove, true);
+    if (!hoverRAF) hoverRAF = requestAnimationFrame(pollHoverHighlight);
   }
 
   function uninstallOverlayHoverHandler() {
     document.removeEventListener('mousemove', handleOverlayMouseMove, true);
+    if (hoverRAF) { cancelAnimationFrame(hoverRAF); hoverRAF = null; }
+    hoverHighlightIdx = -1;
   }
 
   function handleOverlayMouseMove(e) {
