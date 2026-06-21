@@ -820,19 +820,23 @@
           toggleMask(idx);
         });
 
-        // Direct mouseenter/mouseleave for hover highlighting (most reliable)
+        // Hover highlight: use inline styles to bypass CSS specificity
         overlay.addEventListener('mouseenter', () => {
-          document.querySelectorAll('.tts-overlay-mask.hovered').forEach(el => el.classList.remove('hovered'));
-          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.add('hovered'));
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
+            el.style.outline = '2px solid rgba(0,120,212,0.5)';
+            el.style.outlineOffset = '-1px';
+          });
         });
         overlay.addEventListener('mouseleave', (e) => {
-          // Don't remove if moving to another rect of the same sentence
           const related = e.relatedTarget;
-          if (related && related.closest && related.closest('.tts-overlay-mask')) {
-            const relatedIdx = parseInt(related.closest('.tts-overlay-mask').dataset.idx);
-            if (relatedIdx === idx) return;
+          if (related) {
+            const relMask = related.closest ? related.closest('.tts-overlay-mask') : null;
+            if (relMask && parseInt(relMask.dataset.idx) === idx) return;
           }
-          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => el.classList.remove('hovered'));
+          document.querySelectorAll(`.tts-overlay-mask[data-idx="${idx}"]`).forEach(el => {
+            el.style.outline = '';
+            el.style.outlineOffset = '';
+          });
         });
 
         container.appendChild(overlay);
