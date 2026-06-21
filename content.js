@@ -978,7 +978,17 @@
 
   function hideOverlayMask(idx) {
     const group = state.overlayMasks[idx];
-    if (group) group.forEach(el => el.classList.remove('revealed'));
+    if (group) group.forEach(el => {
+      el.classList.remove('revealed');
+      // Restore pointer-events (may have been removed by flash cleanup)
+      el.style.setProperty('pointer-events', 'auto');
+      // Clear any leftover flash styles
+      el.style.removeProperty('background');
+      el.style.removeProperty('box-shadow');
+      el.style.removeProperty('border-radius');
+      el.style.removeProperty('transition');
+      el.style.removeProperty('opacity');
+    });
   }
 
   function highlightOverlayMask(idx) {
@@ -1008,9 +1018,9 @@
           el.style.removeProperty('background');
           el.style.removeProperty('box-shadow');
           el.style.removeProperty('border-radius');
-          el.style.removeProperty('pointer-events');
           el.style.removeProperty('transition');
           el.style.removeProperty('opacity');
+          // Keep pointer-events as-is (revealed = none from CSS, don't touch)
         });
       }, 1700);
     }
