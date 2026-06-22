@@ -1128,6 +1128,13 @@
   }
 
   function handleOverlayMouseMove(e) {
+    // Ignore if mouse is over the sidebar
+    const sidebar = document.getElementById('azure-tts-sidebar');
+    if (sidebar && (sidebar === e.target || sidebar.contains(e.target))) {
+      scheduleHidePane();
+      return;
+    }
+
     // Check if mouse is over a pane
     const overPane = overlayPaneEl && (overlayPaneEl === e.target || overlayPaneEl.contains(e.target));
     if (overPane) {
