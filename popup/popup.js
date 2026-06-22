@@ -9,6 +9,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const testBtn = document.getElementById('test-btn');
   const toggleKeyBtn = document.getElementById('toggle-key');
   const statusEl = document.getElementById('status');
+  const addonToggle = document.getElementById('addon-toggle');
+  const toggleStatusEl = document.getElementById('toggle-status');
+
+  // Load addon enabled state
+  browser.storage.local.get('addonEnabled', (result) => {
+    const enabled = result.addonEnabled !== false; // default true
+    addonToggle.checked = enabled;
+    toggleStatusEl.textContent = enabled ? 'Enabled' : 'Disabled';
+  });
+
+  // Toggle addon on/off
+  addonToggle.addEventListener('change', () => {
+    const enabled = addonToggle.checked;
+    toggleStatusEl.textContent = enabled ? 'Enabled' : 'Disabled';
+    browser.storage.local.set({ addonEnabled: enabled });
+    // Notify all tabs
+    browser.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        browser.tabs.sendMessage(tab.id, { type: 'ADDON_TOGGLE', enabled }).catch(() => {});
+      }
+    });
+  });
 
   // Load saved settings
   browser.runtime.sendMessage({ type: 'GET_SETTINGS' }, (response) => {

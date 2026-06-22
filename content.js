@@ -25,7 +25,8 @@
     overlayMasks: [],     // Array of overlay divs positioned over sentences
     selectionRange: null,
     voices: [],
-    voicesLoaded: false
+    voicesLoaded: false,
+    addonEnabled: true
   };
 
   let audioElements = [];
@@ -39,6 +40,7 @@
     listenForSelection();
     loadVoices();
     listenForClickOutside();
+    listenForNavigation();
   }
 
   // ===== FLOATING ACTION BUTTON =====
@@ -54,6 +56,7 @@
   }
 
   function handleFABClick() {
+    if (!state.addonEnabled) return;
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
     if (selectedText) {
@@ -84,9 +87,52 @@
     }, true);
   }
 
+  // ===== PAGE NAVIGATION DETECTION =====
+  function listenForNavigation() {
+    let lastUrl = location.href;
+
+    // URL change detection (SPA navigation, hash changes)
+    const checkUrl = () => {
+      if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        onPageNavigated();
+      }
+    };
+    window.addEventListener('popstate', checkUrl);
+    window.addEventListener('hashchange', checkUrl);
+    // Poll for pushState/replaceState changes (they don't fire events)
+    setInterval(checkUrl, 1000);
+
+    // MutationObserver: detect large DOM content replacements
+    const contentRoot = document.querySelector('main, article, [role="main"], #content, #mw-content-text, .content') || document.body;
+    let mutationTimer = null;
+    const observer = new MutationObserver((mutations) => {
+      let removedCount = 0;
+      for (const m of mutations) {
+        removedCount += m.removedNodes.length;
+      }
+      // Large batch removal suggests page content replaced
+      if (removedCount > 10) {
+        if (mutationTimer) clearTimeout(mutationTimer);
+        mutationTimer = setTimeout(() => onPageNavigated(), 300);
+      }
+    });
+    observer.observe(contentRoot, { childList: true, subtree: true });
+  }
+
+  function onPageNavigated() {
+    stopPlayback();
+    removePageMasks();
+    state.sentences = [];
+    state.audioBlobs = [];
+    state.dictationRevealed.clear();
+    renderSentences();
+  }
+
   // ===== SELECTION LISTENER =====
   function listenForSelection() {
     document.addEventListener('mouseup', () => {
+      if (!state.addonEnabled) return;
       const selectedText = window.getSelection().toString().trim();
       const fab = document.getElementById('azure-tts-fab');
       if (fab) {
@@ -814,11 +860,16 @@
         return;
       }
 
-      // Get client rects for this sentence and merge rects on the same line
+      // Detect vertical writing mode from the sentence's container
+      const containerEl = sentenceRange.startContainer.parentElement;
+      const writingMode = containerEl ? getComputedStyle(containerEl).writingMode : '';
+      const isVertical = writingMode.startsWith('vertical');
+
+      // Get client rects for this sentence and merge rects on the same line/column
       const rawRects = sentenceRange.getClientRects();
       const scrollX = window.scrollX;
       const scrollY = window.scrollY;
-      const merged = mergeRectsOnSameLine(rawRects);
+      const merged = mergeRectsOnSameLine(rawRects, isVertical);
 
       const overlayGroup = [];
       for (let ri = 0; ri < merged.length; ri++) {
@@ -895,7 +946,7 @@
    * Merge DOMRectList rects that share the same line (similar top) into
    * single wide rects, eliminating gaps caused by inline element boundaries.
    */
-  function mergeRectsOnSameLine(rectList) {
+  function mergeRectsOnSameLine(rectList, isVertical) {
     const rects = [];
     for (let i = 0; i < rectList.length; i++) {
       const r = rectList[i];
@@ -904,24 +955,34 @@
     }
     if (!rects.length) return [];
 
-    // Group rects that overlap vertically (their Y ranges intersect)
     const lines = [];
     for (const r of rects) {
       let found = false;
       for (const line of lines) {
-        const lineTop = Math.min(...line.map(l => l.top));
-        const lineBottom = Math.max(...line.map(l => l.bottom));
-        // Check vertical overlap
-        if (r.top < lineBottom && r.bottom > lineTop) {
-          line.push(r);
-          found = true;
-          break;
+        if (isVertical) {
+          // Vertical text: group rects that overlap horizontally (same column)
+          const lineLeft = Math.min(...line.map(l => l.left));
+          const lineRight = Math.max(...line.map(l => l.right));
+          if (r.left < lineRight && r.right > lineLeft) {
+            line.push(r);
+            found = true;
+            break;
+          }
+        } else {
+          // Horizontal text: group rects that overlap vertically (same line)
+          const lineTop = Math.min(...line.map(l => l.top));
+          const lineBottom = Math.max(...line.map(l => l.bottom));
+          if (r.top < lineBottom && r.bottom > lineTop) {
+            line.push(r);
+            found = true;
+            break;
+          }
         }
       }
       if (!found) lines.push([r]);
     }
 
-    // Merge each line into one rect
+    // Merge each group into one rect
     const merged = lines.map(line => {
       const top = Math.min(...line.map(r => r.top));
       const bottom = Math.max(...line.map(r => r.bottom));
@@ -930,8 +991,10 @@
       return { top, left, width: right - left, height: bottom - top };
     });
 
-    // Filter out tiny fragments: only remove if both very narrow AND very short
-    // (e.g. superscript markers). Keep short last-lines of sentences.
+    // Filter out tiny fragments
+    if (isVertical) {
+      return merged.filter(r => !(r.width < 14 && r.height < 20));
+    }
     return merged.filter(r => !(r.width < 20 && r.height < 14));
   }
 
@@ -1238,10 +1301,45 @@
     return div.innerHTML;
   }
 
+  // ===== ADDON ENABLE/DISABLE =====
+  function disableAddon() {
+    stopPlayback();
+    removePageMasks();
+    const fab = document.getElementById('azure-tts-fab');
+    const sidebar = document.getElementById('azure-tts-sidebar');
+    if (fab) fab.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'none';
+    state.addonEnabled = false;
+  }
+
+  function enableAddon() {
+    const fab = document.getElementById('azure-tts-fab');
+    const sidebar = document.getElementById('azure-tts-sidebar');
+    if (fab) fab.style.display = '';
+    if (sidebar) sidebar.style.display = '';
+    state.addonEnabled = true;
+  }
+
+  browser.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'ADDON_TOGGLE') {
+      if (msg.enabled) enableAddon();
+      else disableAddon();
+    }
+  });
+
   // ===== START =====
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      // Check initial enabled state
+      browser.storage.local.get('addonEnabled', (result) => {
+        if (result.addonEnabled === false) disableAddon();
+      });
+    });
   } else {
     init();
+    browser.storage.local.get('addonEnabled', (result) => {
+      if (result.addonEnabled === false) disableAddon();
+    });
   }
 })();

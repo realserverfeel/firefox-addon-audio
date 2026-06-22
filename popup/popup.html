@@ -7,8 +7,14 @@
 </head>
 <body>
   <div class="popup-container">
-    <h2>Azure TTS Reader</h2>
-    <p class="subtitle">Configure your Azure Speech Service credentials</p>
+    <div class="toggle-row">
+      <h2>Azure TTS Reader</h2>
+      <label class="switch">
+        <input type="checkbox" id="addon-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <p class="subtitle" id="toggle-status">Enabled</p>
 
     <div class="form-group">
       <label for="api-key">API Key</label>
