@@ -41,6 +41,7 @@
     loadVoices();
     listenForClickOutside();
     listenForNavigation();
+    listenForResize();
   }
 
   // ===== FLOATING ACTION BUTTON =====
@@ -127,6 +128,24 @@
     state.audioBlobs = [];
     state.dictationRevealed.clear();
     renderSentences();
+  }
+
+  // ===== RESIZE HANDLER =====
+  function listenForResize() {
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (state.overlayMasks.length > 0 && state.selectionRange) {
+          const savedRevealed = new Set(state.dictationRevealed);
+          removePageMasks();
+          createOverlayMasks();
+          // Restore revealed state
+          savedRevealed.forEach(idx => revealOverlayMask(idx));
+          state.dictationRevealed = savedRevealed;
+        }
+      }, 300);
+    });
   }
 
   // ===== SELECTION LISTENER =====
