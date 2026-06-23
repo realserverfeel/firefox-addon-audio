@@ -214,9 +214,6 @@
         const gender = (v.Gender || '').toLowerCase();
         return name.includes(filterLower) || locale.includes(filterLower) || gender.includes(filterLower);
       });
-    } else {
-      // Show only English voices by default to reduce clutter
-      voices = voices.filter(v => (v.Locale || '').startsWith('en-'));
     }
 
     // Sort: current selection first, then alphabetical
@@ -244,7 +241,11 @@
     }).join('');
 
     if (shown.length === 0) {
-      list.innerHTML = '<div class="tts-voice-empty">No voices found</div>';
+      if (!state.voicesLoaded) {
+        list.innerHTML = '<div class="tts-voice-empty">Loading voices...</div>';
+      } else {
+        list.innerHTML = '<div class="tts-voice-empty">No voices found</div>';
+      }
     }
 
     // Click handlers
@@ -267,6 +268,10 @@
     if (dropdown) {
       dropdown.classList.add('open');
       voiceHighlightIdx = -1;
+      // Retry loading voices if not loaded yet
+      if (!state.voicesLoaded || !state.voices.length) {
+        loadVoices();
+      }
       renderVoiceDropdown(document.getElementById('tts-voice-search-input').value);
     }
   }
