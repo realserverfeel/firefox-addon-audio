@@ -110,6 +110,10 @@
     const observer = new MutationObserver((mutations) => {
       let removedCount = 0;
       for (const m of mutations) {
+        // Ignore mutations from our own elements
+        if (m.target.id === 'tts-overlay-container' || m.target.closest?.('#tts-overlay-container') ||
+            m.target.id === 'azure-tts-sidebar' || m.target.closest?.('#azure-tts-sidebar') ||
+            m.target.id === 'azure-tts-fab') continue;
         removedCount += m.removedNodes.length;
       }
       // Large batch removal suggests page content replaced
@@ -392,6 +396,12 @@
       <div class="tts-sentence-list" id="tts-sentence-list"></div>
     `;
     document.body.appendChild(sidebar);
+
+    // Isolate sidebar from host page events (keyboard shortcuts, scroll/wheel)
+    ['keydown', 'keypress', 'keyup'].forEach(evt => {
+      sidebar.addEventListener(evt, e => e.stopPropagation(), true);
+    });
+    sidebar.addEventListener('wheel', e => e.stopPropagation(), true);
 
     // Event listeners
     document.getElementById('tts-close').addEventListener('click', closeSidebar);
