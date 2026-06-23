@@ -502,6 +502,11 @@
   border-left: 3px solid rgba(0, 120, 212, 0.5);
 }
 
+.tts-overlay-mask.revealed.tts-mask-first.tts-mask-vertical {
+  border-left: none;
+  border-top: 3px solid rgba(0, 120, 212, 0.5);
+}
+
 .tts-overlay-mask.revealed.tts-mask-first .tts-mask-edge {
   display: block;
 }
@@ -522,6 +527,14 @@
 
 .tts-mask-edge:hover {
   background: rgba(0, 120, 212, 0.4);
+}
+
+.tts-mask-edge-vertical {
+  left: 0 !important;
+  top: -3px !important;
+  width: 100% !important;
+  height: 8px !important;
+  border-radius: 2px 2px 0 0 !important;
 }
 
 /* Playing state: fully opaque, subtle blue tint + border */

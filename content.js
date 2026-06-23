@@ -853,16 +853,39 @@
       fullText += text;
     });
 
-    // For each sentence, find its position and get bounding rects
+    // Build a mapping from normalized-text positions back to fullText positions.
+    // This handles webapps that split text into many small spans with extra whitespace.
+    const normMap = []; // normMap[normIdx] = fullTextIdx
+    const normChars = [];
+    for (let fi = 0; fi < fullText.length; fi++) {
+      const ch = fullText[fi];
+      if (/\s/.test(ch)) {
+        // Collapse whitespace: only add a single space if last norm char wasn't space
+        if (normChars.length > 0 && normChars[normChars.length - 1] !== ' ') {
+          normChars.push(' ');
+          normMap.push(fi);
+        }
+      } else {
+        normChars.push(ch);
+        normMap.push(fi);
+      }
+    }
+    const normFull = normChars.join('');
+
+    // For each sentence, find its position using normalized matching
     let searchPos = 0;
     state.sentences.forEach((sentence, idx) => {
-      const sentenceStart = fullText.indexOf(sentence, searchPos);
-      if (sentenceStart === -1) {
+      const normSentence = sentence.replace(/\s+/g, ' ').trim();
+      const normIdx = normFull.indexOf(normSentence, searchPos);
+      if (normIdx === -1) {
         state.overlayMasks.push(null);
         return;
       }
-      const sentenceEnd = sentenceStart + sentence.length;
-      searchPos = sentenceEnd;
+      // Map normalized positions back to fullText positions
+      const sentenceStart = normMap[normIdx];
+      const normEndIdx = normIdx + normSentence.length - 1;
+      const sentenceEnd = (normEndIdx < normMap.length ? normMap[normEndIdx] : fullText.length - 1) + 1;
+      searchPos = normIdx + normSentence.length;
 
       // Create a Range spanning this sentence
       const sentenceRange = document.createRange();
@@ -918,13 +941,14 @@
         // Edge bar for re-masking after reveal (first rect only)
         if (isFirst) {
           const edge = document.createElement('div');
-          edge.className = 'tts-mask-edge';
+          edge.className = 'tts-mask-edge' + (isVertical ? ' tts-mask-edge-vertical' : '');
           edge.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleMask(idx);
           });
           overlay.appendChild(edge);
         }
+        if (isVertical) overlay.classList.add('tts-mask-vertical');
 
         overlay.addEventListener('click', (e) => {
           e.stopPropagation();
