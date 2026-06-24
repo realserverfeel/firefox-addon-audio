@@ -92,7 +92,7 @@ function buildSSML(text, options) {
 
   // Wrap with prosody if rate or pitch specified
   if (rate !== '1' || pitch !== '+0%') {
-    const rateStr = rate === '1' ? 'medium' : `${(parseFloat(rate) * 100).toFixed(0)}%`;
+    const rateStr = rate === '1' ? 'medium' : rate;
     content = `<prosody rate="${rateStr}" pitch="${pitch}">${content}</prosody>`;
   }
 

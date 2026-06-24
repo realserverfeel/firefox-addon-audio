@@ -859,28 +859,22 @@
     });
 
     // Build a mapping from normalized-text positions back to fullText positions.
-    // This handles webapps that split text into many small spans with extra whitespace.
+    // Strip all whitespace for robust matching (handles CJK pages that split text
+    // into many small spans with extra whitespace between them).
     const normMap = []; // normMap[normIdx] = fullTextIdx
     const normChars = [];
     for (let fi = 0; fi < fullText.length; fi++) {
       const ch = fullText[fi];
-      if (/\s/.test(ch)) {
-        // Collapse whitespace: only add a single space if last norm char wasn't space
-        if (normChars.length > 0 && normChars[normChars.length - 1] !== ' ') {
-          normChars.push(' ');
-          normMap.push(fi);
-        }
-      } else {
-        normChars.push(ch);
-        normMap.push(fi);
-      }
+      if (/\s/.test(ch)) continue; // skip all whitespace
+      normChars.push(ch);
+      normMap.push(fi);
     }
     const normFull = normChars.join('');
 
     // For each sentence, find its position using normalized matching
     let searchPos = 0;
     state.sentences.forEach((sentence, idx) => {
-      const normSentence = sentence.replace(/\s+/g, ' ').trim();
+      const normSentence = sentence.replace(/\s+/g, '');
       const normIdx = normFull.indexOf(normSentence, searchPos);
       if (normIdx === -1) {
         state.overlayMasks.push(null);
@@ -1067,6 +1061,11 @@
       NodeFilter.SHOW_TEXT,
       {
         acceptNode: (node) => {
+          // Skip ruby annotation text (furigana) — not part of selection.toString()
+          const parent = node.parentElement;
+          if (parent && (parent.tagName === 'RT' || parent.tagName === 'RP')) {
+            return NodeFilter.FILTER_REJECT;
+          }
           const nodeRange = document.createRange();
           nodeRange.selectNodeContents(node);
           if (range.compareBoundaryPoints(Range.END_TO_START, nodeRange) >= 0) return NodeFilter.FILTER_REJECT;
