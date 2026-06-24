@@ -26,7 +26,8 @@
     selectionRange: null,
     voices: [],
     voicesLoaded: false,
-    addonEnabled: true
+    addonEnabled: true,
+    autoPlaySingle: true
   };
 
   let audioElements = [];
@@ -175,9 +176,84 @@
     state.dictationRevealed = new Set();
     audioElements = new Array(state.sentences.length).fill(null);
 
+    // Single-sentence auto-play: mask + play immediately, no sidebar
+    if (state.autoPlaySingle && state.sentences.length === 1 && isSingleSentenceShort(state.sentences[0])) {
+      processAutoPlaySingle();
+      return;
+    }
+
     openSidebar();
     renderSentences();
     startSynthesis();
+  }
+
+  /**
+   * Detect if a sentence is "short" for auto-play purposes.
+   * CJK-dominant text: <= 40 chars; otherwise <= 120 chars.
+   */
+  function isSingleSentenceShort(sentence) {
+    const cjkCount = (sentence.match(/[\u3000-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) || []).length;
+    const isCJK = cjkCount / sentence.length > 0.3;
+    return isCJK ? sentence.length <= 40 : sentence.length <= 120;
+  }
+
+  /**
+   * Auto-play single sentence: create mask overlay, synthesize + play,
+   * reveal mask after playback ends.
+   */
+  function processAutoPlaySingle() {
+    // Create overlay mask (dictation-style)
+    if (state.selectionRange) {
+      createOverlayMasks();
+    }
+
+    // Synthesize and auto-play
+    const cleanText = stripFootnotes(state.sentences[0]);
+    AzureTTS.synthesize(cleanText, state.settings)
+      .then(blob => {
+        state.audioBlobs[0] = blob;
+        audioElements[0] = null;
+        playSentenceAutoPlay(0);
+      })
+      .catch(err => {
+        state.audioBlobs[0] = { error: err.message };
+        // On error, just reveal and open sidebar as fallback
+        revealOverlayMask(0);
+        state.dictationRevealed.add(0);
+        openSidebar();
+        renderSentences();
+      });
+  }
+
+  /**
+   * Play sentence in auto-play mode: highlight mask during playback,
+   * reveal mask when done. Sidebar stays closed.
+   */
+  function playSentenceAutoPlay(idx) {
+    const blob = state.audioBlobs[idx];
+    if (!(blob instanceof Blob)) return;
+
+    stopCurrentAudio();
+    state.currentPlaying = idx;
+
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audioElements[idx] = audio;
+    currentAudio = audio;
+
+    // Highlight overlay mask during playback
+    highlightOverlayMask(idx);
+
+    audio.addEventListener('ended', () => {
+      state.currentPlaying = -1;
+      currentAudio = null;
+      URL.revokeObjectURL(url);
+      // Reveal mask after playback
+      state.dictationRevealed.add(idx);
+      revealOverlayMask(idx);
+    });
+
+    audio.play();
   }
 
   // ===== DYNAMIC VOICE LOADING =====
@@ -1389,6 +1465,9 @@
       if (msg.enabled) enableAddon();
       else disableAddon();
     }
+    if (msg.type === 'AUTOPLAY_SINGLE_TOGGLE') {
+      state.autoPlaySingle = msg.enabled;
+    }
   });
 
   // ===== START =====
@@ -1396,14 +1475,16 @@
     document.addEventListener('DOMContentLoaded', () => {
       init();
       // Check initial enabled state
-      browser.storage.local.get('addonEnabled', (result) => {
+      browser.storage.local.get(['addonEnabled', 'autoPlaySingle'], (result) => {
         if (result.addonEnabled === false) disableAddon();
+        if (result.autoPlaySingle === false) state.autoPlaySingle = false;
       });
     });
   } else {
     init();
-    browser.storage.local.get('addonEnabled', (result) => {
+    browser.storage.local.get(['addonEnabled', 'autoPlaySingle'], (result) => {
       if (result.addonEnabled === false) disableAddon();
+      if (result.autoPlaySingle === false) state.autoPlaySingle = false;
     });
   }
 })();

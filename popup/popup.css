@@ -78,6 +78,31 @@ h2 {
   margin-bottom: 16px;
 }
 
+.sub-toggle {
+  margin-bottom: 2px;
+}
+
+.toggle-label {
+  font-size: 13px;
+  color: #444;
+}
+
+.switch.small {
+  width: 36px;
+  height: 20px;
+}
+
+.switch.small .slider::before {
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.switch.small input:checked + .slider::before {
+  transform: translateX(16px);
+}
+
 .form-group {
   margin-bottom: 14px;
   position: relative;

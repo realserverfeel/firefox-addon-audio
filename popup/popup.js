@@ -11,12 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusEl = document.getElementById('status');
   const addonToggle = document.getElementById('addon-toggle');
   const toggleStatusEl = document.getElementById('toggle-status');
+  const autoplayToggle = document.getElementById('autoplay-toggle');
+  const autoplayStatusEl = document.getElementById('autoplay-status');
 
   // Load addon enabled state
-  browser.storage.local.get('addonEnabled', (result) => {
+  browser.storage.local.get(['addonEnabled', 'autoPlaySingle'], (result) => {
     const enabled = result.addonEnabled !== false; // default true
     addonToggle.checked = enabled;
     toggleStatusEl.textContent = enabled ? 'Enabled' : 'Disabled';
+
+    const autoplay = result.autoPlaySingle !== false; // default true
+    autoplayToggle.checked = autoplay;
+    autoplayStatusEl.textContent = autoplay ? 'On \u2014 short selections auto-play with mask' : 'Off';
   });
 
   // Toggle addon on/off
@@ -28,6 +34,19 @@ document.addEventListener('DOMContentLoaded', () => {
     browser.tabs.query({}, (tabs) => {
       for (const tab of tabs) {
         browser.tabs.sendMessage(tab.id, { type: 'ADDON_TOGGLE', enabled }).catch(() => {});
+      }
+    });
+  });
+
+  // Toggle auto-play single sentence
+  autoplayToggle.addEventListener('change', () => {
+    const enabled = autoplayToggle.checked;
+    autoplayStatusEl.textContent = enabled ? 'On \u2014 short selections auto-play with mask' : 'Off';
+    browser.storage.local.set({ autoPlaySingle: enabled });
+    // Notify all tabs
+    browser.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        browser.tabs.sendMessage(tab.id, { type: 'AUTOPLAY_SINGLE_TOGGLE', enabled }).catch(() => {});
       }
     });
   });
