@@ -27,7 +27,9 @@
     voices: [],
     voicesLoaded: false,
     addonEnabled: true,
-    autoPlaySingle: true
+    autoPlaySingle: true,
+    maskMonitorId: null,  // rAF id for mask drift monitor
+    maskAnchor: null      // baseline document-coords rect of the selection
   };
 
   let audioElements = [];
@@ -142,15 +144,90 @@
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         if (state.overlayMasks.length > 0 && state.selectionRange) {
-          const savedRevealed = new Set(state.dictationRevealed);
-          removePageMasks();
-          createOverlayMasks();
-          // Restore revealed state
-          savedRevealed.forEach(idx => revealOverlayMask(idx));
-          state.dictationRevealed = savedRevealed;
+          rebuildMasksPreservingState();
         }
       }, 300);
     });
+  }
+
+  // Rebuild overlay masks at the selection's current position while keeping
+  // the already-revealed sentences revealed.
+  function rebuildMasksPreservingState() {
+    const savedRevealed = new Set(state.dictationRevealed);
+    removePageMasks();
+    createOverlayMasks();
+    savedRevealed.forEach(idx => revealOverlayMask(idx));
+    state.dictationRevealed = savedRevealed;
+  }
+
+  // ===== MASK DRIFT MONITOR =====
+  // Reader webapps (e.g. ttsu) turn pages via inner-element scroll or a
+  // `transform: translateX` on the content — neither changes window scroll, so
+  // document-anchored masks would stay frozen over the new page (residual
+  // masks). We watch the selection's document-coordinate position each frame:
+  // normal window-scroll reading keeps it constant (no action), while a page
+  // turn shifts it. When it drifts we reposition the masks if the text is still
+  // visible, or clear them if the text has left the viewport / DOM.
+  const MASK_DRIFT_THRESHOLD = 3; // px
+  const MASK_MONITOR_INTERVAL = 80; // ms
+
+  function getSelectionGeometry() {
+    const range = state.selectionRange;
+    if (!range) return null;
+    const sc = range.startContainer;
+    const ec = range.endContainer;
+    if (!sc || !ec || !sc.isConnected || !ec.isConnected) return null;
+    const r = range.getBoundingClientRect();
+    if (r.width < 1 && r.height < 1) return null;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const visible = r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw;
+    return {
+      docTop: r.top + window.scrollY,
+      docLeft: r.left + window.scrollX,
+      visible
+    };
+  }
+
+  function startMaskMonitor() {
+    stopMaskMonitor();
+    state.maskAnchor = getSelectionGeometry();
+    let last = 0;
+    const tick = (now) => {
+      state.maskMonitorId = requestAnimationFrame(tick);
+      if (!state.overlayMasks.length) { stopMaskMonitor(); return; }
+      if (now - last < MASK_MONITOR_INTERVAL) return;
+      last = now;
+      checkMaskDrift();
+    };
+    state.maskMonitorId = requestAnimationFrame(tick);
+  }
+
+  function stopMaskMonitor() {
+    if (state.maskMonitorId != null) {
+      cancelAnimationFrame(state.maskMonitorId);
+      state.maskMonitorId = null;
+    }
+  }
+
+  function checkMaskDrift() {
+    const cur = getSelectionGeometry();
+    const anchor = state.maskAnchor;
+    // Selection's DOM is gone (content swapped) -> clear.
+    if (!cur) { removePageMasks(); return; }
+    if (!anchor) { state.maskAnchor = cur; return; }
+
+    const drifted =
+      Math.abs(cur.docTop - anchor.docTop) > MASK_DRIFT_THRESHOLD ||
+      Math.abs(cur.docLeft - anchor.docLeft) > MASK_DRIFT_THRESHOLD;
+    if (!drifted) return;
+
+    if (cur.visible) {
+      // Text moved within the viewport (inner scroll) -> follow it.
+      rebuildMasksPreservingState(); // restarts monitor with a fresh anchor
+    } else {
+      // Text turned off the page -> remove the now-stale masks.
+      removePageMasks();
+    }
   }
 
   // ===== SELECTION LISTENER =====
@@ -1068,6 +1145,9 @@
 
     // Install global hover handler for pane logic
     installOverlayHoverHandler();
+
+    // Watch for reader page-turns that would leave masks stranded
+    if (state.selectionRange) startMaskMonitor();
   }
 
   /**
@@ -1391,6 +1471,7 @@
   }
 
   function removePageMasks() {
+    stopMaskMonitor();
     uninstallOverlayHoverHandler();
     forceRemovePane();
     const container = document.getElementById('tts-overlay-container');
