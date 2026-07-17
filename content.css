@@ -56,10 +56,6 @@
   left: 0px;
 }
 
-#azure-tts-fab.left-side svg {
-  transform: scaleX(-1);
-}
-
 /* Sidebar */
 #azure-tts-sidebar {
   position: fixed;
