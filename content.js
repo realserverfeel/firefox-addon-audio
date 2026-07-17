@@ -49,16 +49,18 @@
 
   // ===== FLOATING ACTION BUTTON =====
   const FAB_ICON_PATH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
-  // Speaker pointing right (default, button on the right edge)
-  const FAB_ICON_RIGHT = `<svg viewBox="0 0 24 24"><path d="${FAB_ICON_PATH}"/></svg>`;
-  // Speaker pointing left (button on the left edge). Mirrored inside SVG
-  // coordinate space via a group transform — reliable, no CSS transform.
-  const FAB_ICON_LEFT = `<svg viewBox="0 0 24 24"><g transform="translate(24,0) scale(-1,1)"><path d="${FAB_ICON_PATH}"/></g></svg>`;
+  // Speaker whose mouth/waves point right (used when the button sits on the
+  // LEFT edge, so it faces into the page).
+  const FAB_ICON_POINT_RIGHT = `<svg viewBox="0 0 24 24"><path d="${FAB_ICON_PATH}"/></svg>`;
+  // Speaker whose mouth/waves point left (used when the button sits on the
+  // RIGHT edge, so it faces into the page). Mirrored inside SVG coordinate
+  // space via a group transform — reliable, no CSS transform.
+  const FAB_ICON_POINT_LEFT = `<svg viewBox="0 0 24 24"><g transform="translate(24,0) scale(-1,1)"><path d="${FAB_ICON_PATH}"/></g></svg>`;
 
   function createFAB() {
     const fab = document.createElement('button');
     fab.id = 'azure-tts-fab';
-    fab.innerHTML = FAB_ICON_RIGHT;
+    fab.innerHTML = FAB_ICON_POINT_LEFT;
     fab.title = 'Azure TTS Reader';
     // Prevent mousedown from clearing the text selection
     fab.addEventListener('mousedown', (e) => e.preventDefault());
@@ -72,7 +74,7 @@
     if (!fab) return;
     const onLeft = side === 'left';
     fab.classList.toggle('left-side', onLeft);
-    fab.innerHTML = onLeft ? FAB_ICON_LEFT : FAB_ICON_RIGHT;
+    fab.innerHTML = onLeft ? FAB_ICON_POINT_RIGHT : FAB_ICON_POINT_LEFT;
   }
 
   function handleFABClick() {
