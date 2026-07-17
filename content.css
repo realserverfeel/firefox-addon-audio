@@ -39,6 +39,27 @@
   fill: white;
 }
 
+/* Left-side placement (mirror of the default right-edge behavior) */
+#azure-tts-fab.left-side {
+  right: auto;
+  left: -20px;
+  transition: left 0.3s ease, transform 0.3s ease, background 0.3s ease;
+}
+
+#azure-tts-fab.left-side:hover {
+  right: auto;
+  left: 0px;
+}
+
+#azure-tts-fab.left-side.active {
+  right: auto;
+  left: 0px;
+}
+
+#azure-tts-fab.left-side svg {
+  transform: scaleX(-1);
+}
+
 /* Sidebar */
 #azure-tts-sidebar {
   position: fixed;

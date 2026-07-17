@@ -59,6 +59,13 @@
     document.body.appendChild(fab);
   }
 
+  // Place the floating button on the left or right edge of the screen.
+  function applyButtonSide(side) {
+    const fab = document.getElementById('azure-tts-fab');
+    if (!fab) return;
+    fab.classList.toggle('left-side', side === 'left');
+  }
+
   function handleFABClick() {
     if (!state.addonEnabled) return;
     const selection = window.getSelection();
@@ -1549,6 +1556,9 @@
     if (msg.type === 'AUTOPLAY_SINGLE_TOGGLE') {
       state.autoPlaySingle = msg.enabled;
     }
+    if (msg.type === 'BUTTON_SIDE') {
+      applyButtonSide(msg.side);
+    }
   });
 
   // ===== START =====
@@ -1556,16 +1566,18 @@
     document.addEventListener('DOMContentLoaded', () => {
       init();
       // Check initial enabled state
-      browser.storage.local.get(['addonEnabled', 'autoPlaySingle'], (result) => {
+      browser.storage.local.get(['addonEnabled', 'autoPlaySingle', 'buttonSide'], (result) => {
         if (result.addonEnabled === false) disableAddon();
         if (result.autoPlaySingle === false) state.autoPlaySingle = false;
+        if (result.buttonSide === 'left') applyButtonSide('left');
       });
     });
   } else {
     init();
-    browser.storage.local.get(['addonEnabled', 'autoPlaySingle'], (result) => {
+    browser.storage.local.get(['addonEnabled', 'autoPlaySingle', 'buttonSide'], (result) => {
       if (result.addonEnabled === false) disableAddon();
       if (result.autoPlaySingle === false) state.autoPlaySingle = false;
+      if (result.buttonSide === 'left') applyButtonSide('left');
     });
   }
 })();

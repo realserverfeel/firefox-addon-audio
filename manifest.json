@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Azure TTS Reader",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "browser_specific_settings": {
     "gecko": {
       "id": "azure-tts-reader@realserverfeel"
@@ -24,6 +24,10 @@
       "css": ["content.css"]
     }
   ],
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": false
+  },
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
