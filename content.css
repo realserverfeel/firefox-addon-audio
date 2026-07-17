@@ -1,0 +1,680 @@
+/* Azure TTS Reader - Content Script Styles */
+
+/* Floating Action Button */
+#azure-tts-fab {
+  position: fixed;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: horizontal-tb;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0078d4, #005a9e);
+  border: none;
+  cursor: pointer;
+  z-index: 2147483640;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: right 0.3s ease, transform 0.3s ease, background 0.3s ease;
+  opacity: 0.7;
+}
+
+#azure-tts-fab:hover {
+  right: 0px;
+  opacity: 1;
+}
+
+#azure-tts-fab.active {
+  right: 0px;
+  opacity: 1;
+  background: linear-gradient(135deg, #00a86b, #007a4d);
+}
+
+#azure-tts-fab svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+/* Left-side placement (mirror of the default right-edge behavior) */
+#azure-tts-fab.left-side {
+  right: auto;
+  left: -20px;
+  transition: left 0.3s ease, transform 0.3s ease, background 0.3s ease;
+}
+
+#azure-tts-fab.left-side:hover {
+  right: auto;
+  left: 0px;
+}
+
+#azure-tts-fab.left-side.active {
+  right: auto;
+  left: 0px;
+}
+
+/* Sidebar */
+#azure-tts-sidebar {
+  position: fixed;
+  top: 0;
+  right: -380px;
+  width: 360px;
+  height: 100vh;
+  background: #ffffff;
+  z-index: 2147483641;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+  transition: right 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  writing-mode: horizontal-tb;
+  direction: ltr;
+  text-orientation: mixed;
+}
+
+#azure-tts-sidebar.open {
+  right: 0;
+}
+
+/* Sidebar Header */
+.tts-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #0078d4, #005a9e);
+  color: white;
+  flex-shrink: 0;
+}
+
+.tts-sidebar-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tts-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.tts-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Mode Tabs */
+.tts-mode-tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.tts-mode-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  background: #f5f5f5;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.tts-mode-tab.active {
+  background: white;
+  color: #0078d4;
+  border-bottom: 2px solid #0078d4;
+}
+
+.tts-mode-tab:hover:not(.active) {
+  background: #eaeaea;
+}
+
+/* Controls */
+.tts-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.tts-btn {
+  padding: 6px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.tts-btn:hover {
+  background: #f0f0f0;
+  border-color: #0078d4;
+}
+
+.tts-btn.primary {
+  background: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+.tts-btn.primary:hover {
+  background: #005a9e;
+}
+
+/* Settings Panel */
+.tts-settings {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.tts-setting-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.tts-setting-row:last-child {
+  margin-bottom: 0;
+}
+
+.tts-setting-row label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  min-width: 44px;
+}
+
+.tts-setting-row select,
+.tts-setting-row input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 12px;
+  background: white;
+}
+
+/* Voice Search Dropdown */
+.tts-voice-search-container {
+  flex: 1;
+  position: relative;
+}
+
+#tts-voice-search-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+#tts-voice-search-input:focus {
+  outline: none;
+  border-color: #0078d4;
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.15);
+}
+
+.tts-voice-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d0d0d0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 2147483645;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.tts-voice-dropdown.open {
+  display: block;
+}
+
+.tts-voice-dropdown-list {
+  padding: 4px 0;
+}
+
+.tts-voice-option {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tts-voice-option:hover {
+  background: #f0f7ff;
+}
+
+.tts-voice-option.selected {
+  background: #e8f4fd;
+  font-weight: 500;
+}
+
+.tts-voice-option.highlighted {
+  background: #0078d4;
+  color: white;
+}
+
+.tts-voice-option.highlighted .tts-voice-name {
+  color: white;
+}
+
+.tts-voice-option.highlighted .tts-voice-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tts-voice-name {
+  font-size: 12px;
+  color: #333;
+}
+
+.tts-voice-meta {
+  font-size: 10px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.tts-voice-empty {
+  padding: 12px;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+}
+
+/* Speed buttons */
+.tts-speed-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.tts-speed-btn {
+  padding: 3px 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.tts-speed-btn.active {
+  background: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+/* Sentence List */
+.tts-sentence-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* Sentence Card — full text display */
+.tts-sentence-card {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+.tts-sentence-card.playing {
+  background: #e8f4fd;
+  border-left: 3px solid #0078d4;
+}
+
+.tts-sentence-card.error {
+  background: #fef0f0;
+}
+
+.tts-sentence-num {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 3px;
+}
+
+.tts-sentence-text {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  color: #333;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.tts-sentence-text.masked {
+  filter: blur(5px);
+  user-select: none;
+  cursor: pointer;
+  transition: filter 0.3s ease;
+}
+
+.tts-sentence-text.masked:hover {
+  filter: blur(3px);
+}
+
+/* Sentence actions — stacked layout */
+.tts-sentence-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tts-playback-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tts-tools-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tts-action-btn {
+  padding: 4px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 11px;
+  color: #555;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tts-action-btn:hover {
+  background: #f0f0f0;
+  border-color: #0078d4;
+  color: #0078d4;
+}
+
+.tts-action-btn.playing {
+  background: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+.tts-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Progress bar — clickable/seekable */
+.tts-progress-container {
+  flex: 1;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+
+.tts-progress-container:hover {
+  height: 8px;
+  margin-top: -1px;
+  margin-bottom: -1px;
+}
+
+.tts-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0078d4, #00a5e0);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.tts-duration {
+  font-size: 10px;
+  color: #999;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* Loading spinner */
+.tts-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #999;
+  font-size: 12px;
+}
+
+.tts-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #0078d4;
+  border-radius: 50%;
+  animation: tts-spin 0.8s linear infinite;
+}
+
+@keyframes tts-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== OVERLAY-BASED PAGE MASKS (dictation mode) ===== */
+.tts-overlay-mask {
+  border-radius: 4px;
+  background: rgba(235, 238, 245, 0.88);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  cursor: pointer;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s ease,
+              background 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Alternate sentence: slightly different tint for boundary clarity */
+.tts-overlay-mask.tts-mask-alt {
+  background: rgba(225, 230, 240, 0.88);
+}
+
+.tts-overlay-mask:hover {
+  background: rgba(215, 225, 240, 0.92);
+  box-shadow: 0 0 0 1.5px rgba(0,120,212,0.4), 0 2px 6px rgba(0,120,212,0.12);
+}
+
+.tts-overlay-mask.revealed {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  border-radius: 0;
+}
+
+.tts-overlay-mask.revealed.tts-mask-first {
+  border-left: 3px solid rgba(0, 120, 212, 0.5);
+}
+
+.tts-overlay-mask.revealed.tts-mask-first.tts-mask-vertical {
+  border-left: none;
+  border-top: 3px solid rgba(0, 120, 212, 0.5);
+}
+
+.tts-overlay-mask.revealed.tts-mask-first .tts-mask-edge {
+  display: block;
+}
+
+.tts-mask-edge {
+  display: none;
+  position: absolute;
+  left: -3px;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: pointer;
+  pointer-events: auto !important;
+  border-radius: 2px 0 0 2px;
+  background: rgba(0, 120, 212, 0.15);
+  transition: background 0.2s ease;
+}
+
+.tts-mask-edge:hover {
+  background: rgba(0, 120, 212, 0.4);
+}
+
+.tts-mask-edge-vertical {
+  left: 0 !important;
+  top: -3px !important;
+  width: 100% !important;
+  height: 8px !important;
+  border-radius: 2px 2px 0 0 !important;
+}
+
+/* Playing state: fully opaque, subtle blue tint + border */
+.tts-overlay-mask.playing {
+  background: rgba(210, 228, 250, 0.92);
+  box-shadow: 0 0 0 1.5px rgba(0,120,212,0.45), 0 2px 8px rgba(0,120,212,0.15);
+  animation: tts-overlay-glow 2s ease-in-out infinite;
+}
+
+.tts-overlay-mask.playing.revealed {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  border-radius: 0;
+}
+
+
+
+@keyframes tts-overlay-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 1.5px rgba(0,120,212,0.45), 0 2px 8px rgba(0,120,212,0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(0,120,212,0.55), 0 2px 14px rgba(0,120,212,0.25);
+  }
+}
+
+/* Overlay hover pane (mini toolbar) — single per sentence */
+.tts-overlay-pane {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(30,34,40,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  writing-mode: horizontal-tb;
+  padding: 3px 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: tts-pane-in 0.12s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes tts-pane-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.tts-overlay-pane-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6cb4ee;
+  margin-right: 2px;
+}
+
+.tts-overlay-pane-btn {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: #ccc;
+  transition: all 0.12s;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.tts-overlay-pane-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
+/* Follow-along mode settings */
+.tts-follow-settings {
+  padding: 8px 16px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #e0e0e0;
+  display: none;
+  flex-shrink: 0;
+}
+
+.tts-follow-settings.visible {
+  display: block;
+}
+
+.tts-follow-settings label {
+  font-size: 12px;
+  color: #555;
+}
+
+/* Dictation mode controls */
+.tts-dictation-controls {
+  display: none;
+  gap: 6px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.tts-dictation-controls.visible {
+  display: flex;
+}
+
+/* Copied tooltip */
+.tts-copied-tooltip {
+  background: #333;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  animation: tts-fadeout 1.2s ease forwards;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+@keyframes tts-fadeout {
+  0% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
